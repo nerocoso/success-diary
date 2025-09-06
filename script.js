@@ -35,6 +35,10 @@ const calendarDaysEl = document.getElementById('calendarDays');
 const prevMonthBtn = document.getElementById('prevMonth');
 const nextMonthBtn = document.getElementById('nextMonth');
 
+// 마우스 트레일 관련 요소들
+const mouseTrail = document.getElementById('mouseTrail');
+let customCursor = null;
+
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -49,6 +53,9 @@ function initializeApp() {
     
     // 달력 초기화
     initializeCalendar();
+    
+    // 마우스 트레일 초기화
+    initializeMouseTrail();
     
     // 데이터 로드 및 표시
     loadDiaries();
@@ -176,6 +183,10 @@ function loadDiaries() {
             </div>
         </div>
     `).join('');
+    
+    // 새로 생성된 일지 항목들에 호버 효과 추가
+    const diaryItems = diaryList.querySelectorAll('.diary-item');
+    diaryItems.forEach(item => addHoverEffectToElement(item));
 }
 
 function deleteDiary(id) {
@@ -279,6 +290,10 @@ function loadGoals() {
             </div>
         </div>
     `).join('');
+    
+    // 새로 생성된 목표 항목들에 호버 효과 추가
+    const goalItems = goalsList.querySelectorAll('.goal-item');
+    goalItems.forEach(item => addHoverEffectToElement(item));
 }
 
 function completeGoal(id) {
@@ -527,7 +542,7 @@ function renderCalendar() {
     
     calendarDaysEl.innerHTML = calendarHTML;
     
-    // 각 날짜에 클릭 이벤트 추가
+    // 각 날짜에 클릭 이벤트 및 호버 효과 추가
     const dayElements = calendarDaysEl.querySelectorAll('.calendar-day');
     dayElements.forEach(dayEl => {
         dayEl.addEventListener('click', () => {
@@ -536,6 +551,7 @@ function renderCalendar() {
                 selectDate(date);
             }
         });
+        addHoverEffectToElement(dayEl);
     });
 }
 
@@ -573,4 +589,74 @@ function selectDate(date) {
         showDiaryForm();
         document.getElementById('diaryDate').value = date;
     }
+}
+
+// 마우스 트레일 효과 함수들
+function initializeMouseTrail() {
+    // 커스텀 커서 생성
+    customCursor = document.createElement('div');
+    customCursor.className = 'custom-cursor';
+    document.body.appendChild(customCursor);
+    
+    // 마우스 이동 이벤트
+    document.addEventListener('mousemove', handleMouseMove);
+    
+    // 호버 가능한 요소들에 이벤트 추가
+    const hoverElements = document.querySelectorAll('button, a, .calendar-day, .diary-item, .goal-item, .stat-card');
+    hoverElements.forEach(element => {
+        element.addEventListener('mouseenter', () => customCursor.classList.add('hover'));
+        element.addEventListener('mouseleave', () => customCursor.classList.remove('hover'));
+    });
+}
+
+function handleMouseMove(e) {
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    // 커스텀 커서 위치 업데이트
+    if (customCursor) {
+        customCursor.style.left = x - 10 + 'px';
+        customCursor.style.top = y - 10 + 'px';
+    }
+    
+    // 트레일 파티클 생성 (마우스 이동 속도에 따라 조절)
+    if (Math.random() > 0.7) { // 30% 확률로 파티클 생성
+        createTrailParticle(x, y);
+    }
+}
+
+function createTrailParticle(x, y) {
+    const particle = document.createElement('div');
+    particle.className = 'trail-particle';
+    
+    // 랜덤한 위치 오프셋
+    const offsetX = (Math.random() - 0.5) * 20;
+    const offsetY = (Math.random() - 0.5) * 20;
+    
+    particle.style.left = x + offsetX + 'px';
+    particle.style.top = y + offsetY + 'px';
+    
+    // 랜덤한 크기
+    const size = Math.random() * 3 + 2; // 2-5px
+    particle.style.width = size + 'px';
+    particle.style.height = size + 'px';
+    
+    mouseTrail.appendChild(particle);
+    
+    // 애니메이션 완료 후 파티클 제거
+    setTimeout(() => {
+        if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+        }
+    }, 800);
+}
+
+// 동적으로 추가되는 요소들에도 호버 효과 적용
+function addHoverEffectToElement(element) {
+    element.addEventListener('mouseenter', () => {
+        if (customCursor) customCursor.classList.add('hover');
+    });
+    element.addEventListener('mouseleave', () => {
+        if (customCursor) customCursor.classList.remove('hover');
+    });
 }
