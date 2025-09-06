@@ -1,6 +1,8 @@
 // 전역 변수
 let diaries = JSON.parse(localStorage.getItem('diaries')) || [];
 let goals = JSON.parse(localStorage.getItem('goals')) || [];
+let currentDate = new Date();
+let selectedDate = null;
 
 // DOM 요소들
 const navBtns = document.querySelectorAll('.nav-btn');
@@ -26,6 +28,13 @@ const totalGoals = document.getElementById('totalGoals');
 const completedGoals = document.getElementById('completedGoals');
 const currentStreak = document.getElementById('currentStreak');
 
+// 달력 관련 요소들
+const currentMonthEl = document.getElementById('currentMonth');
+const currentYearEl = document.getElementById('currentYear');
+const calendarDaysEl = document.getElementById('calendarDays');
+const prevMonthBtn = document.getElementById('prevMonth');
+const nextMonthBtn = document.getElementById('nextMonth');
+
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -37,6 +46,9 @@ function initializeApp() {
     
     // 이벤트 리스너 등록
     setupEventListeners();
+    
+    // 달력 초기화
+    initializeCalendar();
     
     // 데이터 로드 및 표시
     loadDiaries();
@@ -59,6 +71,10 @@ function setupEventListeners() {
     addGoalBtn.addEventListener('click', showGoalForm);
     cancelGoalBtn.addEventListener('click', hideGoalForm);
     saveGoalBtn.addEventListener('click', saveGoal);
+
+    // 달력 관련 이벤트
+    prevMonthBtn.addEventListener('click', () => changeMonth(-1));
+    nextMonthBtn.addEventListener('click', () => changeMonth(1));
 }
 
 // 탭 전환 함수
@@ -124,6 +140,7 @@ function saveDiary() {
     loadDiaries();
     hideDiaryForm();
     updateStats();
+    renderCalendar(); // 달력 업데이트
     
     // 성공 메시지
     showNotification('일지가 성공적으로 저장되었습니다!', 'success');
@@ -142,7 +159,7 @@ function loadDiaries() {
     }
 
     diaryList.innerHTML = diaries.map(diary => `
-        <div class="diary-item">
+        <div class="diary-item" data-diary-id="${diary.id}">
             <div class="diary-item-header">
                 <div>
                     <div class="diary-item-title">${escapeHtml(diary.title)}</div>
@@ -167,6 +184,7 @@ function deleteDiary(id) {
         localStorage.setItem('diaries', JSON.stringify(diaries));
         loadDiaries();
         updateStats();
+        renderCalendar(); // 달력 업데이트
         showNotification('일지가 삭제되었습니다.', 'info');
     }
 }
@@ -434,3 +452,125 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// 달력 관련 함수들
+function initializeCalendar() {
+    updateCalendarHeader();
+    renderCalendar();
+}
+
+function updateCalendarHeader() {
+    const monthNames = [
+        '1월', '2월', '3월', '4월', '5월', '6월',
+        '7월', '8월', '9월', '10월', '11월', '12월'
+    ];
+    
+    currentMonthEl.textContent = monthNames[currentDate.getMonth()];
+    currentYearEl.textContent = currentDate.getFullYear();
+}
+
+function changeMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    updateCalendarHeader();
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // 이번 달의 첫 번째 날과 마지막 날
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // 이번 달의 첫 번째 날이 시작하는 요일 (0=일요일)
+    const startDay = firstDay.getDay();
+    
+    // 이전 달의 마지막 날들
+    const prevMonth = new Date(year, month, 0);
+    const prevMonthLastDay = prevMonth.getDate();
+    
+    // 다음 달의 첫 번째 날들
+    const nextMonth = new Date(year, month + 1, 1);
+    
+    let calendarHTML = '';
+    
+    // 이전 달의 날들
+    for (let i = startDay - 1; i >= 0; i--) {
+        const day = prevMonthLastDay - i;
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        calendarHTML += `<div class="calendar-day other-month" data-date="${dateStr}">${day}</div>`;
+    }
+    
+    // 이번 달의 날들
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayElement = new Date(year, month, day);
+        const today = new Date();
+        const isToday = dayElement.toDateString() === today.toDateString();
+        const hasDiary = diaries.some(diary => diary.date === dateStr);
+        
+        let classes = 'calendar-day';
+        if (isToday) classes += ' today';
+        if (hasDiary) classes += ' has-diary';
+        if (selectedDate === dateStr) classes += ' selected';
+        
+        calendarHTML += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
+    }
+    
+    // 다음 달의 날들 (달력을 완성하기 위해)
+    const remainingDays = 42 - (startDay + lastDay.getDate()); // 6주 * 7일 = 42
+    for (let day = 1; day <= remainingDays; day++) {
+        const dateStr = `${year}-${String(month + 2).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        calendarHTML += `<div class="calendar-day other-month" data-date="${dateStr}">${day}</div>`;
+    }
+    
+    calendarDaysEl.innerHTML = calendarHTML;
+    
+    // 각 날짜에 클릭 이벤트 추가
+    const dayElements = calendarDaysEl.querySelectorAll('.calendar-day');
+    dayElements.forEach(dayEl => {
+        dayEl.addEventListener('click', () => {
+            const date = dayEl.dataset.date;
+            if (date) {
+                selectDate(date);
+            }
+        });
+    });
+}
+
+function selectDate(date) {
+    selectedDate = date;
+    
+    // 달력에서 선택된 날짜 표시 업데이트
+    const dayElements = calendarDaysEl.querySelectorAll('.calendar-day');
+    dayElements.forEach(dayEl => {
+        dayEl.classList.remove('selected');
+        if (dayEl.dataset.date === date) {
+            dayEl.classList.add('selected');
+        }
+    });
+    
+    // 일지 탭으로 전환
+    switchTab('diary');
+    
+    // 해당 날짜의 일지가 있는지 확인
+    const diaryForDate = diaries.find(diary => diary.date === date);
+    if (diaryForDate) {
+        // 해당 날짜의 일지가 있으면 일지 목록에서 해당 일지로 스크롤
+        setTimeout(() => {
+            const diaryItem = document.querySelector(`[data-diary-id="${diaryForDate.id}"]`);
+            if (diaryItem) {
+                diaryItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                diaryItem.style.animation = 'pulse 0.5s ease-in-out';
+                setTimeout(() => {
+                    diaryItem.style.animation = '';
+                }, 500);
+            }
+        }, 100);
+    } else {
+        // 해당 날짜의 일지가 없으면 새 일지 작성 폼 표시
+        showDiaryForm();
+        document.getElementById('diaryDate').value = date;
+    }
+}
