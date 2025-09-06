@@ -39,6 +39,11 @@ const nextMonthBtn = document.getElementById('nextMonth');
 const mouseTrail = document.getElementById('mouseTrail');
 let customCursor = null;
 
+// 테마 관련 요소들
+const currentThemePreview = document.getElementById('currentThemePreview');
+const currentThemeName = document.getElementById('currentThemeName');
+let currentTheme = localStorage.getItem('selectedTheme') || 'pink-sky';
+
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -56,6 +61,9 @@ function initializeApp() {
     
     // 마우스 트레일 초기화
     initializeMouseTrail();
+    
+    // 테마 초기화
+    initializeTheme();
     
     // 데이터 로드 및 표시
     loadDiaries();
@@ -593,20 +601,42 @@ function selectDate(date) {
 
 // 마우스 트레일 효과 함수들
 function initializeMouseTrail() {
+    // 마우스 트레일 컨테이너 확인
+    if (!mouseTrail) {
+        console.error('Mouse trail container not found');
+        return;
+    }
+    
     // 커스텀 커서 생성
     customCursor = document.createElement('div');
     customCursor.className = 'custom-cursor';
     document.body.appendChild(customCursor);
     
+    // 초기 커서 위치 설정 (화면 중앙)
+    customCursor.style.left = '50vw';
+    customCursor.style.top = '50vh';
+    
     // 마우스 이동 이벤트
     document.addEventListener('mousemove', handleMouseMove);
     
     // 호버 가능한 요소들에 이벤트 추가
-    const hoverElements = document.querySelectorAll('button, a, .calendar-day, .diary-item, .goal-item, .stat-card');
+    const hoverElements = document.querySelectorAll('button, a, .calendar-day, .diary-item, .goal-item, .stat-card, .theme-card');
     hoverElements.forEach(element => {
-        element.addEventListener('mouseenter', () => customCursor.classList.add('hover'));
-        element.addEventListener('mouseleave', () => customCursor.classList.remove('hover'));
+        element.addEventListener('mouseenter', () => {
+            if (customCursor) customCursor.classList.add('hover');
+        });
+        element.addEventListener('mouseleave', () => {
+            if (customCursor) customCursor.classList.remove('hover');
+        });
     });
+    
+    console.log('Mouse trail initialized successfully');
+    
+    // 테스트용: 3초 후에 테스트 파티클 생성
+    setTimeout(() => {
+        console.log('Creating test particle...');
+        createTrailParticle(window.innerWidth / 2, window.innerHeight / 2);
+    }, 3000);
 }
 
 function handleMouseMove(e) {
@@ -615,37 +645,40 @@ function handleMouseMove(e) {
     
     // 커스텀 커서 위치 업데이트
     if (customCursor) {
-        customCursor.style.left = x - 10 + 'px';
-        customCursor.style.top = y - 10 + 'px';
+        customCursor.style.left = x + 'px';
+        customCursor.style.top = y + 'px';
     }
     
     // 트레일 파티클 생성 (마우스 이동 속도에 따라 조절)
-    if (Math.random() > 0.7) { // 30% 확률로 파티클 생성
+    if (Math.random() > 0.8) { // 20% 확률로 파티클 생성 (더 자주 생성)
         createTrailParticle(x, y);
     }
 }
 
 function createTrailParticle(x, y) {
+    if (!mouseTrail) return;
+    
     const particle = document.createElement('div');
     particle.className = 'trail-particle';
     
     // 랜덤한 위치 오프셋
-    const offsetX = (Math.random() - 0.5) * 20;
-    const offsetY = (Math.random() - 0.5) * 20;
+    const offsetX = (Math.random() - 0.5) * 15;
+    const offsetY = (Math.random() - 0.5) * 15;
     
-    particle.style.left = x + offsetX + 'px';
-    particle.style.top = y + offsetY + 'px';
+    particle.style.left = (x + offsetX) + 'px';
+    particle.style.top = (y + offsetY) + 'px';
     
     // 랜덤한 크기
-    const size = Math.random() * 3 + 2; // 2-5px
+    const size = Math.random() * 4 + 3; // 3-7px
     particle.style.width = size + 'px';
     particle.style.height = size + 'px';
     
+    // 파티클을 mouseTrail 컨테이너에 추가
     mouseTrail.appendChild(particle);
     
     // 애니메이션 완료 후 파티클 제거
     setTimeout(() => {
-        if (particle.parentNode) {
+        if (particle && particle.parentNode) {
             particle.parentNode.removeChild(particle);
         }
     }, 800);
@@ -659,4 +692,184 @@ function addHoverEffectToElement(element) {
     element.addEventListener('mouseleave', () => {
         if (customCursor) customCursor.classList.remove('hover');
     });
+}
+
+// 테마 관련 함수들
+function initializeTheme() {
+    // 테마 카드들에 클릭 이벤트 추가
+    const themeCards = document.querySelectorAll('.theme-card');
+    themeCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const theme = card.dataset.theme;
+            selectTheme(theme);
+        });
+        addHoverEffectToElement(card);
+    });
+    
+    // 현재 테마 적용
+    applyTheme(currentTheme);
+    updateCurrentThemeDisplay();
+}
+
+function selectTheme(theme) {
+    currentTheme = theme;
+    localStorage.setItem('selectedTheme', theme);
+    
+    // 테마 카드 선택 상태 업데이트
+    const themeCards = document.querySelectorAll('.theme-card');
+    themeCards.forEach(card => {
+        card.classList.remove('selected');
+        if (card.dataset.theme === theme) {
+            card.classList.add('selected');
+        }
+    });
+    
+    // 테마 적용
+    applyTheme(theme);
+    updateCurrentThemeDisplay();
+    
+    // 성공 알림
+    showNotification('테마가 변경되었습니다!', 'success');
+}
+
+function applyTheme(theme) {
+    const themeColors = getThemeColors(theme);
+    
+    // CSS 변수 업데이트
+    document.documentElement.style.setProperty('--primary-color', themeColors.primary);
+    document.documentElement.style.setProperty('--secondary-color', themeColors.secondary);
+    document.documentElement.style.setProperty('--accent-color', themeColors.accent);
+    
+    // 모든 그라데이션 요소 업데이트
+    updateGradientElements(themeColors);
+}
+
+function getThemeColors(theme) {
+    const themes = {
+        'pink-sky': {
+            primary: '#ff6b9d',
+            secondary: '#87ceeb',
+            accent: '#ff8a80',
+            gradient: 'linear-gradient(135deg, #ff6b9d, #ff8a80, #87ceeb)'
+        },
+        'orange-pink': {
+            primary: '#ff9a56',
+            secondary: '#ff6b9d',
+            accent: '#ff8a80',
+            gradient: 'linear-gradient(135deg, #ff9a56, #ff6b9d, #ff8a80)'
+        },
+        'red-blue': {
+            primary: '#ff4757',
+            secondary: '#3742fa',
+            accent: '#ff6b9d',
+            gradient: 'linear-gradient(135deg, #ff4757, #ff6b9d, #3742fa)'
+        },
+        'green-blue': {
+            primary: '#2ed573',
+            secondary: '#3742fa',
+            accent: '#7bed9f',
+            gradient: 'linear-gradient(135deg, #2ed573, #7bed9f, #3742fa)'
+        },
+        'purple-pink': {
+            primary: '#a55eea',
+            secondary: '#ff6b9d',
+            accent: '#ff8a80',
+            gradient: 'linear-gradient(135deg, #a55eea, #ff6b9d, #ff8a80)'
+        },
+        'cyan-purple': {
+            primary: '#26d0ce',
+            secondary: '#a55eea',
+            accent: '#ff6b9d',
+            gradient: 'linear-gradient(135deg, #26d0ce, #a55eea, #ff6b9d)'
+        },
+        'yellow-orange': {
+            primary: '#ffa502',
+            secondary: '#ff9a56',
+            accent: '#ff6b9d',
+            gradient: 'linear-gradient(135deg, #ffa502, #ff9a56, #ff6b9d)'
+        },
+        'blue-cyan': {
+            primary: '#3742fa',
+            secondary: '#26d0ce',
+            accent: '#87ceeb',
+            gradient: 'linear-gradient(135deg, #3742fa, #26d0ce, #87ceeb)'
+        }
+    };
+    
+    return themes[theme] || themes['pink-sky'];
+}
+
+function updateGradientElements(colors) {
+    // 로고 그라데이션 업데이트
+    const logo = document.querySelector('.logo');
+    if (logo) {
+        logo.style.background = colors.gradient;
+    }
+    
+    // 네비게이션 버튼 활성 상태 업데이트
+    const activeNavBtn = document.querySelector('.nav-btn.active');
+    if (activeNavBtn) {
+        activeNavBtn.style.background = `rgba(${hexToRgb(colors.primary)}, 0.2)`;
+        activeNavBtn.style.borderColor = `rgba(${hexToRgb(colors.primary)}, 0.5)`;
+        activeNavBtn.style.color = colors.primary;
+    }
+    
+    // 섹션 헤더 그라데이션 업데이트
+    const sectionHeaders = document.querySelectorAll('.diary-header h2, .goals-header h2, .theme-header h2');
+    sectionHeaders.forEach(header => {
+        header.style.background = colors.gradient;
+    });
+    
+    // 버튼 그라데이션 업데이트
+    const primaryBtns = document.querySelectorAll('.btn-primary');
+    primaryBtns.forEach(btn => {
+        btn.style.background = `rgba(${hexToRgb(colors.primary)}, 0.2)`;
+        btn.style.borderColor = `rgba(${hexToRgb(colors.primary)}, 0.5)`;
+        btn.style.color = colors.primary;
+    });
+    
+    // 폼 라벨 그라데이션 업데이트
+    const formLabels = document.querySelectorAll('.form-group label');
+    formLabels.forEach(label => {
+        label.style.background = `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`;
+    });
+    
+    // 통계 카드 아이콘 업데이트
+    const statIcons = document.querySelectorAll('.stat-icon');
+    statIcons.forEach(icon => {
+        icon.style.background = `rgba(${hexToRgb(colors.primary)}, 0.2)`;
+        icon.style.borderColor = `rgba(${hexToRgb(colors.primary)}, 0.5)`;
+        icon.style.color = colors.primary;
+    });
+    
+    // 통계 숫자 그라데이션 업데이트
+    const statNumbers = document.querySelectorAll('.stat-content h3');
+    statNumbers.forEach(number => {
+        number.style.background = colors.gradient;
+    });
+}
+
+function updateCurrentThemeDisplay() {
+    const themeNames = {
+        'pink-sky': '핑크 스카이',
+        'orange-pink': '오렌지 핑크',
+        'red-blue': '레드 블루',
+        'green-blue': '그린 블루',
+        'purple-pink': '퍼플 핑크',
+        'cyan-purple': '시안 퍼플',
+        'yellow-orange': '옐로우 오렌지',
+        'blue-cyan': '블루 시안'
+    };
+    
+    if (currentThemePreview && currentThemeName) {
+        currentThemePreview.className = `current-theme-preview ${currentTheme}-gradient`;
+        currentThemeName.textContent = themeNames[currentTheme] || '핑크 스카이';
+    }
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+        '255, 107, 157';
 }
