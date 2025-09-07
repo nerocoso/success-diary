@@ -59,6 +59,21 @@ const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 
+// 네로봇 학습 데이터
+let neroBotData = JSON.parse(localStorage.getItem('neroBotData')) || {
+    conversations: [],
+    userPreferences: {
+        diaryStyle: 'detailed',
+        favoriteCommands: [],
+        projectHistory: []
+    },
+    learnedPatterns: {
+        commonRequests: {},
+        responseTemplates: {},
+        userFeedback: {}
+    }
+};
+
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
@@ -213,9 +228,13 @@ function sendMessage() {
     
     // 사용자 메시지 추가
     addMessage(message, 'user');
+    
+    // 대화 기록 저장
+    saveConversation(message, 'user');
+    
     chatInput.value = '';
     
-    // 네로봇 응답 처리
+    // 네로봇 응답 처리 (학습된 패턴 적용)
     setTimeout(() => {
         handleNeroBotResponse(message);
     }, 1000);
@@ -231,6 +250,19 @@ function addMessage(content, sender) {
     
     if (sender === 'bot') {
         contentDiv.innerHTML = `<i class="fas fa-robot"></i>${content}`;
+        
+        // 봇 메시지에 피드백 버튼 추가
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'message-feedback';
+        feedbackDiv.innerHTML = `
+            <button class="feedback-btn" onclick="giveFeedback('${content}', 'helpful')" title="도움이 됐어요">
+                <i class="fas fa-thumbs-up"></i>
+            </button>
+            <button class="feedback-btn" onclick="giveFeedback('${content}', 'not-helpful')" title="도움이 안됐어요">
+                <i class="fas fa-thumbs-down"></i>
+            </button>
+        `;
+        messageDiv.appendChild(feedbackDiv);
     } else {
         contentDiv.innerHTML = `<i class="fas fa-user"></i>${content}`;
     }
@@ -242,67 +274,366 @@ function addMessage(content, sender) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// 네로봇 응답 처리
+// 대화 기록 저장
+function saveConversation(message, sender) {
+    const conversation = {
+        message: message,
+        sender: sender,
+        timestamp: new Date().toISOString(),
+        context: getCurrentContext()
+    };
+    
+    neroBotData.conversations.push(conversation);
+    
+    // 최근 100개 대화만 유지
+    if (neroBotData.conversations.length > 100) {
+        neroBotData.conversations = neroBotData.conversations.slice(-100);
+    }
+    
+    // 사용자 선호도 학습
+    learnUserPreferences(message, sender);
+    
+    // 데이터 저장
+    localStorage.setItem('neroBotData', JSON.stringify(neroBotData));
+}
+
+// 현재 컨텍스트 가져오기
+function getCurrentContext() {
+    return {
+        currentDate: new Date().toISOString().split('T')[0],
+        currentProject: 'nero developing diary',
+        recentDiaries: diaries.slice(-3),
+        recentGoals: goals.slice(-3)
+    };
+}
+
+// 사용자 선호도 학습
+function learnUserPreferences(message, sender) {
+    if (sender === 'user') {
+        const lowerMessage = message.toLowerCase();
+        
+        // 자주 사용하는 명령어 패턴 학습
+        if (lowerMessage.includes('개발일지')) {
+            neroBotData.userPreferences.favoriteCommands.push('diary');
+        }
+        if (lowerMessage.includes('github')) {
+            neroBotData.userPreferences.favoriteCommands.push('github');
+        }
+        if (lowerMessage.includes('목표')) {
+            neroBotData.userPreferences.favoriteCommands.push('goals');
+        }
+        
+        // 프로젝트 관련 키워드 학습
+        if (lowerMessage.includes('프로젝트') || lowerMessage.includes('개발')) {
+            neroBotData.userPreferences.projectHistory.push({
+                keyword: message,
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+}
+
+// 네로봇 응답 처리 (학습된 패턴 적용)
 function handleNeroBotResponse(userMessage) {
     const lowerMessage = userMessage.toLowerCase();
     
-    if (lowerMessage.includes('개발일지') || lowerMessage.includes('일지')) {
-        generateDevLog(userMessage);
-    } else if (lowerMessage.includes('github') || lowerMessage.includes('커밋')) {
-        addMessage('GitHub 연동 기능은 현재 개발 중입니다! 곧 사용할 수 있을 예정이에요 🚀', 'bot');
-    } else if (lowerMessage.includes('안녕') || lowerMessage.includes('hello')) {
-        addMessage('안녕하세요! 저는 네로봇입니다. 개발일지를 자동으로 작성해드릴게요! 어떤 도움이 필요하신가요?', 'bot');
-    } else {
-        addMessage('죄송해요, 아직 그 기능은 준비 중이에요. "개발일지 요약해줘" 같은 명령어를 시도해보세요!', 'bot');
+    // 학습된 패턴 기반 응답
+    const learnedResponse = getLearnedResponse(userMessage);
+    if (learnedResponse) {
+        addMessage(learnedResponse, 'bot');
+        saveConversation(learnedResponse, 'bot');
+        return;
     }
+    
+    // 기본 응답 로직
+    let response = '';
+    
+    if (lowerMessage.includes('개발일지') || lowerMessage.includes('일지')) {
+        response = generateDevLog(userMessage);
+    } else if (lowerMessage.includes('github') || lowerMessage.includes('커밋')) {
+        response = 'GitHub 연동 기능은 현재 개발 중입니다! 곧 사용할 수 있을 예정이에요 🚀';
+    } else if (lowerMessage.includes('안녕') || lowerMessage.includes('hello')) {
+        response = getPersonalizedGreeting();
+    } else if (lowerMessage.includes('어떻게') || lowerMessage.includes('도움')) {
+        response = getContextualHelp();
+    } else if (lowerMessage.includes('프로젝트') || lowerMessage.includes('작업')) {
+        response = getProjectStatus();
+    } else if (lowerMessage.includes('통계') || lowerMessage.includes('학습')) {
+        response = showLearningStats();
+    } else if (lowerMessage.includes('폼') || lowerMessage.includes('작성')) {
+        response = '일지 작성 폼을 표시해드릴게요!';
+        showDiaryForm();
+    } else {
+        response = getFallbackResponse(userMessage);
+    }
+    
+    addMessage(response, 'bot');
+    saveConversation(response, 'bot');
+}
+
+// 학습된 응답 가져오기
+function getLearnedResponse(userMessage) {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // 이전 대화에서 유사한 패턴 찾기
+    const similarConversations = neroBotData.conversations.filter(conv => 
+        conv.sender === 'user' && 
+        conv.message.toLowerCase().includes(lowerMessage.split(' ')[0])
+    );
+    
+    if (similarConversations.length > 0) {
+        // 유사한 대화의 응답 패턴 학습
+        const lastSimilar = similarConversations[similarConversations.length - 1];
+        const botResponse = neroBotData.conversations.find(conv => 
+            conv.timestamp > lastSimilar.timestamp && conv.sender === 'bot'
+        );
+        
+        if (botResponse) {
+            return adaptResponse(botResponse.message, userMessage);
+        }
+    }
+    
+    return null;
+}
+
+// 응답 적응
+function adaptResponse(templateResponse, currentMessage) {
+    // 템플릿 응답을 현재 상황에 맞게 수정
+    let adaptedResponse = templateResponse;
+    
+    // 날짜 정보 업데이트
+    const today = new Date().toLocaleDateString('ko-KR');
+    adaptedResponse = adaptedResponse.replace(/오늘/g, today);
+    
+    // 프로젝트 정보 업데이트
+    adaptedResponse = adaptedResponse.replace(/프로젝트/g, 'nero developing diary');
+    
+    return adaptedResponse;
+}
+
+// 개인화된 인사말
+function getPersonalizedGreeting() {
+    const hour = new Date().getHours();
+    const timeGreeting = hour < 12 ? '좋은 아침' : hour < 18 ? '좋은 오후' : '좋은 저녁';
+    
+    const recentActivity = neroBotData.userPreferences.favoriteCommands.slice(-3);
+    let activityText = '';
+    
+    if (recentActivity.includes('diary')) {
+        activityText = ' 최근에 개발일지를 자주 작성하시는군요!';
+    } else if (recentActivity.includes('github')) {
+        activityText = ' GitHub 작업에 관심이 많으시네요!';
+    }
+    
+    return `${timeGreeting}이에요! 저는 네로봇입니다.${activityText} 어떤 도움이 필요하신가요?`;
+}
+
+// 컨텍스트 기반 도움말
+function getContextualHelp() {
+    const recentDiaries = diaries.length;
+    const recentGoals = goals.length;
+    
+    let helpText = '저는 다음과 같은 도움을 드릴 수 있어요:\n\n';
+    helpText += '📝 "어제 개발일지 작성해줘" - 특정 날짜 일지 자동 생성\n';
+    helpText += '📝 "오늘 일지 요약해줘" - 오늘 일지 자동 생성\n';
+    helpText += '📝 "9월 7일 일지 작성해줘" - 특정 날짜 일지 생성\n';
+    helpText += '📝 "폼 보여줘" - 일지 작성 폼 표시\n';
+    helpText += '🎯 "프로젝트 상태 알려줘" - 현재 진행 상황\n';
+    helpText += '📊 "통계 보여줘" - 학습 통계 확인\n';
+    helpText += '💡 "도움말" - 이 도움말 표시\n\n';
+    
+    if (recentDiaries > 0) {
+        helpText += `현재 ${recentDiaries}개의 일지가 있네요!`;
+    }
+    if (recentGoals > 0) {
+        helpText += ` ${recentGoals}개의 목표도 설정되어 있어요!`;
+    }
+    
+    return helpText;
+}
+
+// 프로젝트 상태
+function getProjectStatus() {
+    const today = new Date().toISOString().split('T')[0];
+    const todayDiary = diaries.find(diary => diary.date === today);
+    
+    let status = '현재 nero developing diary 프로젝트 진행 상황:\n\n';
+    
+    if (todayDiary) {
+        status += '✅ 오늘의 일지 작성 완료\n';
+    } else {
+        status += '⏳ 오늘의 일지 작성 필요\n';
+    }
+    
+    status += '🚀 네로봇 AI 시스템 활성화\n';
+    status += '📅 달력 연동 완료\n';
+    status += '🎨 테마 시스템 완료\n';
+    status += '🔐 로그인 시스템 완료\n\n';
+    status += '다음 단계: GitHub API 연동 예정!';
+    
+    return status;
+}
+
+// 폴백 응답
+function getFallbackResponse(userMessage) {
+    const suggestions = [
+        '개발일지 요약해줘',
+        '오늘 작업한 내용 정리해줘',
+        '프로젝트 진행상황 알려줘',
+        '도움말 보여줘'
+    ];
+    
+    const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+    
+    return `죄송해요, 아직 그 질문에 대한 답변을 준비하지 못했어요. 대신 이런 명령어들을 시도해보세요:\n\n"${randomSuggestion}"\n\n더 많은 기능을 학습하고 있어요! 🧠`;
 }
 
 // 개발일지 생성
 function generateDevLog(userMessage) {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const lowerMessage = userMessage.toLowerCase();
     
-    // 오늘의 일지가 있는지 확인
-    const todayDiary = diaries.find(diary => diary.date === todayStr);
+    // 날짜 파싱 (어제, 오늘, 특정 날짜)
+    let targetDate = new Date();
+    let dateStr = '';
     
-    if (todayDiary) {
-        addMessage(`오늘(${todayStr})의 개발일지가 이미 있네요! 내용을 확인해보세요.`, 'bot');
+    if (lowerMessage.includes('어제')) {
+        targetDate.setDate(targetDate.getDate() - 1);
+        dateStr = '어제';
+    } else if (lowerMessage.includes('오늘')) {
+        dateStr = '오늘';
+    } else {
+        // 특정 날짜가 언급된 경우 (예: "9월 7일")
+        const dateMatch = userMessage.match(/(\d+)월\s*(\d+)일/);
+        if (dateMatch) {
+            const month = parseInt(dateMatch[1]);
+            const day = parseInt(dateMatch[2]);
+            const currentYear = new Date().getFullYear();
+            targetDate = new Date(currentYear, month - 1, day);
+            dateStr = `${month}월 ${day}일`;
+        }
+    }
+    
+    const targetDateStr = targetDate.toISOString().split('T')[0];
+    
+    // 해당 날짜의 일지가 있는지 확인
+    const existingDiary = diaries.find(diary => diary.date === targetDateStr);
+    
+    if (existingDiary) {
+        addMessage(`${dateStr}(${targetDateStr})의 개발일지가 이미 있네요! 내용을 확인해보세요.`, 'bot');
     } else {
         // 자동으로 개발일지 생성
-        const devLogContent = generateAutoDevLog();
+        const devLogContent = generateAutoDevLog(targetDate, dateStr);
+        
+        // 일지 폼 표시
+        showDiaryForm();
         
         // 일지 폼에 자동 입력
-        document.getElementById('diaryDate').value = todayStr;
-        document.getElementById('diaryTitle').value = `오늘의 개발 성과 - ${today.toLocaleDateString()}`;
+        document.getElementById('diaryDate').value = targetDateStr;
+        document.getElementById('diaryTitle').value = `${dateStr}의 개발 성과`;
         document.getElementById('diaryContent').value = devLogContent;
         
-        addMessage(`오늘의 개발일지를 자동으로 생성했습니다! 아래 폼에서 확인하고 저장해주세요.`, 'bot');
+        addMessage(`${dateStr}의 개발일지를 자동으로 생성했습니다! 아래 폼에서 확인하고 저장해주세요.`, 'bot');
+    }
+}
+
+// 일지 폼 표시
+function showDiaryForm() {
+    const diaryForm = document.getElementById('diaryForm');
+    if (diaryForm) {
+        diaryForm.style.display = 'block';
+        // 폼으로 스크롤
+        diaryForm.scrollIntoView({ behavior: 'smooth' });
     }
 }
 
 // 자동 개발일지 내용 생성
-function generateAutoDevLog() {
-    const today = new Date();
-    const dayOfWeek = today.toLocaleDateString('ko-KR', { weekday: 'long' });
+function generateAutoDevLog(targetDate, dateStr) {
+    const dayOfWeek = targetDate.toLocaleDateString('ko-KR', { weekday: 'long' });
+    const isToday = dateStr === '오늘';
+    const isYesterday = dateStr === '어제';
     
-    return `오늘은 ${dayOfWeek}이었습니다.
+    let timeReference = '';
+    if (isToday) {
+        timeReference = '오늘은';
+    } else if (isYesterday) {
+        timeReference = '어제는';
+    } else {
+        timeReference = `${dateStr}은`;
+    }
+    
+    return `${timeReference} ${dayOfWeek}이었습니다.
 
 🚀 주요 작업:
 - nero developing diary 프로젝트 개발
 - 네로봇 AI 챗봇 시스템 구현
 - GitHub 연동 기능 설계
+- 사용자 경험 개선
 
 💡 학습한 내용:
 - AI 챗봇 인터페이스 디자인
 - 자동 일지 생성 시스템 구상
 - 사용자 경험 개선 방법
+- 학습형 AI 시스템 구현
 
-🎯 내일의 목표:
+🎯 ${isToday ? '내일의' : '다음' } 목표:
 - GitHub API 연동 완료
 - 더 정교한 AI 응답 시스템 구현
 - 사용자 피드백 반영
+- 성능 최적화
 
-오늘도 열심히 개발했고, 새로운 기능을 성공적으로 구현할 수 있어서 뿌듯합니다!`;
+${isToday ? '오늘' : dateStr}도 열심히 개발했고, 새로운 기능을 성공적으로 구현할 수 있어서 뿌듯합니다!`;
+}
+
+// 피드백 시스템
+function giveFeedback(message, feedback) {
+    // 피드백 저장
+    if (!neroBotData.learnedPatterns.userFeedback[message]) {
+        neroBotData.learnedPatterns.userFeedback[message] = { helpful: 0, notHelpful: 0 };
+    }
+    
+    neroBotData.learnedPatterns.userFeedback[message][feedback]++;
+    
+    // 데이터 저장
+    localStorage.setItem('neroBotData', JSON.stringify(neroBotData));
+    
+    // 피드백 버튼 비활성화
+    const feedbackBtns = document.querySelectorAll('.feedback-btn');
+    feedbackBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    });
+    
+    // 피드백 메시지 표시
+    const feedbackMessage = feedback === 'helpful' ? 
+        '감사합니다! 더 나은 도움을 드리도록 노력할게요! 😊' : 
+        '피드백 감사합니다! 더 개선하도록 하겠습니다! 💪';
+    
+    setTimeout(() => {
+        addMessage(feedbackMessage, 'bot');
+        saveConversation(feedbackMessage, 'bot');
+    }, 500);
+}
+
+// 학습 통계 표시
+function showLearningStats() {
+    const totalConversations = neroBotData.conversations.length;
+    const favoriteCommands = neroBotData.userPreferences.favoriteCommands;
+    const commandCounts = {};
+    
+    favoriteCommands.forEach(cmd => {
+        commandCounts[cmd] = (commandCounts[cmd] || 0) + 1;
+    });
+    
+    let stats = `📊 네로봇 학습 통계:\n\n`;
+    stats += `💬 총 대화 수: ${totalConversations}개\n`;
+    stats += `🎯 자주 사용하는 명령어:\n`;
+    
+    Object.entries(commandCounts).forEach(([cmd, count]) => {
+        const emoji = cmd === 'diary' ? '📝' : cmd === 'github' ? '🐙' : cmd === 'goals' ? '🎯' : '💬';
+        stats += `${emoji} ${cmd}: ${count}회\n`;
+    });
+    
+    return stats;
 }
 
 // 탭 전환 함수
