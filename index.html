@@ -9,15 +9,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- 로그인 화면 -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-form">
+                <div class="input-group">
+                    <span class="input-label">ID:</span>
+                    <input type="text" id="username" class="login-input" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <span class="input-label">PS:</span>
+                    <input type="password" id="password" class="login-input" autocomplete="off">
+                </div>
+                <div class="login-error" id="loginError" style="display: none;">
+                    ACCESS DENIED
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 앱 (로그인 후에만 표시) -->
+    <div id="mainApp" class="main-app" style="display: none;">
     <!-- 헤더 -->
     <header class="header">
-        <div class="header-content">
-            <h1 class="logo">
-                <i class="fas fa-trophy"></i>
-                nero developing diary
-            </h1>
-            <p class="subtitle">우리의 성공을 기록하고 목표를 달성해보세요</p>
-        </div>
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-trophy"></i>
+                    nero developing diary
+                </h1>
+                <p class="subtitle">우리의 성공을 기록하고 목표를 달성해보세요</p>
+            </div>
     </header>
 
     <!-- 네비게이션 -->
@@ -291,6 +312,8 @@
         </main>
     </div>
 
+    </div> <!-- mainApp 끝 -->
+    
     <script src="script.js"></script>
 </body>
 </html>

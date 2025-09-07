@@ -4,6 +4,11 @@ let goals = JSON.parse(localStorage.getItem('goals')) || [];
 let currentDate = new Date();
 let selectedDate = null;
 
+// 로그인 관련 변수
+const CORRECT_USERNAME = 'nerocoso';
+const CORRECT_PASSWORD = 'nerogod';
+let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
 // DOM 요소들
 const navBtns = document.querySelectorAll('.nav-btn');
 const tabContents = document.querySelectorAll('.tab-content');
@@ -42,10 +47,86 @@ const currentThemePreview = document.getElementById('currentThemePreview');
 const currentThemeName = document.getElementById('currentThemeName');
 let currentTheme = localStorage.getItem('selectedTheme') || 'pink-sky';
 
+// 로그인 관련 요소들
+const loginScreen = document.getElementById('loginScreen');
+const mainApp = document.getElementById('mainApp');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const loginError = document.getElementById('loginError');
+
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    checkLoginStatus();
 });
+
+function checkLoginStatus() {
+    if (isLoggedIn) {
+        showMainApp();
+        initializeApp();
+    } else {
+        showLoginScreen();
+        setupLoginEventListeners();
+    }
+}
+
+function showLoginScreen() {
+    loginScreen.style.display = 'flex';
+    mainApp.style.display = 'none';
+}
+
+function showMainApp() {
+    loginScreen.style.display = 'none';
+    mainApp.style.display = 'block';
+}
+
+function setupLoginEventListeners() {
+    // 엔터키로 로그인
+    usernameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    });
+    
+    passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    });
+    
+    // 입력 시 에러 메시지 숨기기
+    usernameInput.addEventListener('input', function() {
+        if (loginError.style.display !== 'none') {
+            loginError.style.display = 'none';
+        }
+    });
+    
+    passwordInput.addEventListener('input', function() {
+        if (loginError.style.display !== 'none') {
+            loginError.style.display = 'none';
+        }
+    });
+}
+
+function handleLogin() {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+    
+    if (username === CORRECT_USERNAME && password === CORRECT_PASSWORD) {
+        // 로그인 성공
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        // 로그인 화면 숨기고 메인 앱 표시
+        showMainApp();
+        initializeApp();
+    } else {
+        // 로그인 실패
+        loginError.style.display = 'block';
+        usernameInput.value = '';
+        passwordInput.value = '';
+        usernameInput.focus();
+    }
+}
 
 function initializeApp() {
     // 오늘 날짜를 기본값으로 설정
@@ -56,8 +137,6 @@ function initializeApp() {
     
     // 달력 초기화
     initializeCalendar();
-    
-    // 마우스 커서 초기화 제거됨
     
     // 테마 초기화
     initializeTheme();
