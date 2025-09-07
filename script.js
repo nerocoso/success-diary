@@ -35,8 +35,7 @@ const calendarDaysEl = document.getElementById('calendarDays');
 const prevMonthBtn = document.getElementById('prevMonth');
 const nextMonthBtn = document.getElementById('nextMonth');
 
-// 마우스 트레일 관련 요소들
-const mouseTrail = document.getElementById('mouseTrail');
+// 마우스 커서 관련 요소들
 let customCursor = null;
 
 // 테마 관련 요소들
@@ -59,8 +58,8 @@ function initializeApp() {
     // 달력 초기화
     initializeCalendar();
     
-    // 마우스 트레일 초기화
-    initializeMouseTrail();
+    // 마우스 커서 초기화
+    initializeCustomCursor();
     
     // 테마 초기화
     initializeTheme();
@@ -599,14 +598,8 @@ function selectDate(date) {
     }
 }
 
-// 마우스 트레일 효과 함수들
-function initializeMouseTrail() {
-    // 마우스 트레일 컨테이너 확인
-    if (!mouseTrail) {
-        console.error('Mouse trail container not found');
-        return;
-    }
-    
+// 마우스 커서 효과 함수들
+function initializeCustomCursor() {
     // 커스텀 커서 생성
     customCursor = document.createElement('div');
     customCursor.className = 'custom-cursor';
@@ -630,13 +623,7 @@ function initializeMouseTrail() {
         });
     });
     
-    console.log('Mouse trail initialized successfully');
-    
-    // 테스트용: 3초 후에 테스트 파티클 생성
-    setTimeout(() => {
-        console.log('Creating test particle...');
-        createTrailParticle(window.innerWidth / 2, window.innerHeight / 2);
-    }, 3000);
+    console.log('Custom cursor initialized successfully');
 }
 
 function handleMouseMove(e) {
@@ -648,40 +635,6 @@ function handleMouseMove(e) {
         customCursor.style.left = x + 'px';
         customCursor.style.top = y + 'px';
     }
-    
-    // 트레일 파티클 생성 (마우스 이동 속도에 따라 조절)
-    if (Math.random() > 0.8) { // 20% 확률로 파티클 생성 (더 자주 생성)
-        createTrailParticle(x, y);
-    }
-}
-
-function createTrailParticle(x, y) {
-    if (!mouseTrail) return;
-    
-    const particle = document.createElement('div');
-    particle.className = 'trail-particle';
-    
-    // 랜덤한 위치 오프셋
-    const offsetX = (Math.random() - 0.5) * 15;
-    const offsetY = (Math.random() - 0.5) * 15;
-    
-    particle.style.left = (x + offsetX) + 'px';
-    particle.style.top = (y + offsetY) + 'px';
-    
-    // 랜덤한 크기
-    const size = Math.random() * 4 + 3; // 3-7px
-    particle.style.width = size + 'px';
-    particle.style.height = size + 'px';
-    
-    // 파티클을 mouseTrail 컨테이너에 추가
-    mouseTrail.appendChild(particle);
-    
-    // 애니메이션 완료 후 파티클 제거
-    setTimeout(() => {
-        if (particle && particle.parentNode) {
-            particle.parentNode.removeChild(particle);
-        }
-    }, 800);
 }
 
 // 동적으로 추가되는 요소들에도 호버 효과 적용
