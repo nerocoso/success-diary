@@ -7,7 +7,7 @@ let selectedDate = null;
 // 로그인 관련 변수
 const CORRECT_USERNAME = 'nerocoso';
 const CORRECT_PASSWORD = 'nerogod';
-let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+let isLoggedIn = false; // 항상 로그인 화면부터 시작
 
 // DOM 요소들
 const navBtns = document.querySelectorAll('.nav-btn');
@@ -132,7 +132,6 @@ function handleLogin() {
     if (username === CORRECT_USERNAME && password === CORRECT_PASSWORD) {
         // 로그인 성공
         isLoggedIn = true;
-        localStorage.setItem('isLoggedIn', 'true');
         
         // 로그인 화면 숨기고 메인 앱 표시
         showMainApp();

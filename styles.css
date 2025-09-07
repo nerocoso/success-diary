@@ -30,8 +30,7 @@ body {
     padding: 30px;
     border-radius: 20px;
     border: 1px solid rgba(255, 107, 157, 0.3);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 107, 157, 0.2), 0 0 40px rgba(135, 206, 235, 0.1);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
     max-width: 1400px;
@@ -39,21 +38,7 @@ body {
     margin-right: auto;
 }
 
-.header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 107, 157, 0.2), rgba(135, 206, 235, 0.1), transparent);
-    animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
+/* shimmer 애니메이션 제거됨 (성능 최적화) */
 
 .logo {
     font-size: 2.5rem;
@@ -66,7 +51,7 @@ body {
     text-shadow: 0 0 20px rgba(255, 107, 157, 0.5), 0 0 40px rgba(135, 206, 235, 0.3);
     position: relative;
     z-index: 1;
-    filter: drop-shadow(0 0 15px rgba(255, 107, 157, 0.6));
+    /* filter 효과 제거됨 (성능 최적화) */
 }
 
 .logo i {
@@ -75,7 +60,7 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 0 15px rgba(255, 107, 157, 0.8)) drop-shadow(0 0 25px rgba(135, 206, 235, 0.6));
+    /* filter 효과 제거됨 (성능 최적화) */
 }
 
 .subtitle {
@@ -98,8 +83,7 @@ body {
     padding: 15px;
     border-radius: 15px;
     border: 1px solid rgba(255, 107, 157, 0.3);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 107, 157, 0.2), 0 0 30px rgba(135, 206, 235, 0.1);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     max-width: 1400px;
     margin-left: auto;
     margin-right: auto;
@@ -124,7 +108,7 @@ body {
 .nav-btn:hover {
     background: rgba(255, 107, 157, 0.1);
     color: #ff6b9d;
-    transform: translateY(-2px);
+    /* transform 효과 제거됨 (성능 최적화) */
     border-color: rgba(255, 107, 157, 0.4);
     box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3), 0 0 20px rgba(255, 107, 157, 0.2);
 }
@@ -149,8 +133,7 @@ body {
     border-radius: 20px;
     padding: 20px;
     border: 1px solid rgba(255, 107, 157, 0.3);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 107, 157, 0.2), 0 0 40px rgba(135, 206, 235, 0.1);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: sticky;
     top: 20px;
 }
@@ -182,7 +165,7 @@ body {
 
 .calendar-nav-btn:hover {
     background: rgba(255, 107, 157, 0.3);
-    transform: translateY(-1px);
+    /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4), 0 0 20px rgba(135, 206, 235, 0.3);
 }
 
@@ -249,7 +232,7 @@ body {
 .calendar-day:hover {
     background: rgba(255, 107, 157, 0.2);
     color: #ff6b9d;
-    transform: scale(1.05);
+    /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 0 15px rgba(255, 107, 157, 0.3);
 }
 
@@ -296,8 +279,7 @@ body {
     border-radius: 20px;
     padding: 30px;
     border: 1px solid rgba(255, 107, 157, 0.3);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 107, 157, 0.2), 0 0 40px rgba(135, 206, 235, 0.1);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     flex: 1;
 }
 
@@ -356,7 +338,7 @@ body {
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
+    /* transform 효과 제거됨 (성능 최적화) */
     background: rgba(255, 107, 157, 0.3);
     box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4), 0 0 35px rgba(255, 107, 157, 0.3);
 }
@@ -370,7 +352,7 @@ body {
 .btn-secondary:hover {
     background: rgba(60, 60, 60, 0.8);
     color: #e0e0e0;
-    transform: translateY(-1px);
+    /* transform 효과 제거됨 (성능 최적화) */
     border-color: rgba(100, 100, 100, 0.5);
 }
 
@@ -450,7 +432,7 @@ body {
 
 .diary-item:hover,
 .goal-item:hover {
-    transform: translateY(-3px);
+    /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 107, 157, 0.3), 0 0 40px rgba(255, 107, 157, 0.2);
     border-color: rgba(255, 107, 157, 0.5);
 }
@@ -570,7 +552,7 @@ body {
 
 .btn-success:hover {
     background: rgba(255, 107, 157, 0.3);
-    transform: translateY(-1px);
+    /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4), 0 0 20px rgba(255, 107, 157, 0.3);
 }
 
@@ -582,7 +564,7 @@ body {
 
 .btn-danger:hover {
     background: rgba(255, 100, 100, 0.3);
-    transform: translateY(-1px);
+    /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 5px 15px rgba(255, 100, 100, 0.3);
 }
 
@@ -607,7 +589,7 @@ body {
 }
 
 .stat-card:hover {
-    transform: translateY(-3px);
+    /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 107, 157, 0.3), 0 0 40px rgba(255, 107, 157, 0.2);
     border-color: rgba(255, 107, 157, 0.5);
 }
@@ -732,36 +714,14 @@ body {
 }
 
 /* 애니메이션 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* fadeIn 애니메이션 제거됨 (성능 최적화) */
 
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 107, 157, 0.2), 0 0 25px rgba(135, 206, 235, 0.1);
-    }
-    50% {
-        transform: scale(1.02);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 107, 157, 0.4), 0 0 40px rgba(135, 206, 235, 0.3);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 107, 157, 0.2), 0 0 25px rgba(135, 206, 235, 0.1);
-    }
-}
+/* pulse 애니메이션 제거됨 (성능 최적화) */
 
 .diary-item,
 .goal-item,
 .stat-card {
-    animation: fadeIn 0.5s ease-out;
+    /* fadeIn 애니메이션 제거됨 (성능 최적화) */
 }
 
 /* 스크롤바 스타일 */
@@ -840,23 +800,23 @@ body {
 .login-input {
     background: transparent;
     border: none;
-    border-bottom: 1px solid #00ff00;
-    color: #00ff00;
+    border-bottom: 1px solid #87ceeb;
+    color: #87ceeb;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 16px;
     padding: 5px 0;
     outline: none;
     width: 200px;
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 5px #87ceeb;
 }
 
 .login-input:focus {
-    border-bottom: 2px solid #00ff00;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    border-bottom: 2px solid #87ceeb;
+    box-shadow: 0 0 10px rgba(135, 206, 235, 0.3);
 }
 
 .login-input::placeholder {
-    color: rgba(0, 255, 0, 0.5);
+    color: rgba(135, 206, 235, 0.5);
 }
 
 .login-error {
@@ -918,7 +878,7 @@ body {
 }
 
 .theme-card:hover {
-    transform: translateY(-5px);
+    /* transform 효과 제거됨 (성능 최적화) */
     border-color: rgba(255, 107, 157, 0.6);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 107, 157, 0.3);
 }
@@ -945,7 +905,7 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: shimmer 2s infinite;
+    /* shimmer 애니메이션 제거됨 (성능 최적화) */
 }
 
 .theme-info h3 {
@@ -1026,7 +986,7 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: shimmer 2s infinite;
+    /* shimmer 애니메이션 제거됨 (성능 최적화) */
 }
 
 .current-theme p {
