@@ -808,26 +808,33 @@ body {
     background: transparent;
     padding: 0;
     border: none;
-    text-align: left;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .login-form {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
 }
 
 .input-group {
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
     font-size: 16px;
+    gap: 10px;
 }
 
 .input-label {
-    color: #00ff00;
+    color: #ffffff;
     font-weight: bold;
-    margin-right: 10px;
     min-width: 30px;
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 8px #ffffff, 0 0 16px #ffffff, 0 0 24px #ffffff;
+    font-size: 18px;
 }
 
 .login-input {
@@ -855,7 +862,6 @@ body {
 .login-error {
     color: #ff0000;
     font-size: 14px;
-    margin-top: 15px;
     text-shadow: 0 0 5px #ff0000;
     animation: blink 1s infinite;
 }

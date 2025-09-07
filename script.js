@@ -81,14 +81,16 @@ function showMainApp() {
 
 function setupLoginEventListeners() {
     // 엔터키로 로그인
-    usernameInput.addEventListener('keypress', function(e) {
+    usernameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
+            e.preventDefault();
             handleLogin();
         }
     });
     
-    passwordInput.addEventListener('keypress', function(e) {
+    passwordInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
+            e.preventDefault();
             handleLogin();
         }
     });
@@ -105,6 +107,22 @@ function setupLoginEventListeners() {
             loginError.style.display = 'none';
         }
     });
+    
+    // 전체화면 모드 활성화
+    requestFullscreen();
+}
+
+function requestFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => {
+            console.log('전체화면 모드 실패:', err);
+        });
+    } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+    }
 }
 
 function handleLogin() {
