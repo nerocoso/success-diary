@@ -54,6 +54,11 @@ const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('loginError');
 
+// 네로봇 관련 요소들
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
@@ -183,6 +188,121 @@ function setupEventListeners() {
     // 달력 관련 이벤트
     prevMonthBtn.addEventListener('click', () => changeMonth(-1));
     nextMonthBtn.addEventListener('click', () => changeMonth(1));
+    
+    // 네로봇 채팅 이벤트
+    setupNeroBot();
+}
+
+// 네로봇 설정
+function setupNeroBot() {
+    // 메시지 전송 버튼 이벤트
+    sendMessageBtn.addEventListener('click', sendMessage);
+    
+    // 엔터키로 메시지 전송
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+}
+
+// 메시지 전송
+function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+    
+    // 사용자 메시지 추가
+    addMessage(message, 'user');
+    chatInput.value = '';
+    
+    // 네로봇 응답 처리
+    setTimeout(() => {
+        handleNeroBotResponse(message);
+    }, 1000);
+}
+
+// 메시지 추가
+function addMessage(content, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `${sender}-message`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    
+    if (sender === 'bot') {
+        contentDiv.innerHTML = `<i class="fas fa-robot"></i>${content}`;
+    } else {
+        contentDiv.innerHTML = `<i class="fas fa-user"></i>${content}`;
+    }
+    
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    
+    // 스크롤을 맨 아래로
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// 네로봇 응답 처리
+function handleNeroBotResponse(userMessage) {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    if (lowerMessage.includes('개발일지') || lowerMessage.includes('일지')) {
+        generateDevLog(userMessage);
+    } else if (lowerMessage.includes('github') || lowerMessage.includes('커밋')) {
+        addMessage('GitHub 연동 기능은 현재 개발 중입니다! 곧 사용할 수 있을 예정이에요 🚀', 'bot');
+    } else if (lowerMessage.includes('안녕') || lowerMessage.includes('hello')) {
+        addMessage('안녕하세요! 저는 네로봇입니다. 개발일지를 자동으로 작성해드릴게요! 어떤 도움이 필요하신가요?', 'bot');
+    } else {
+        addMessage('죄송해요, 아직 그 기능은 준비 중이에요. "개발일지 요약해줘" 같은 명령어를 시도해보세요!', 'bot');
+    }
+}
+
+// 개발일지 생성
+function generateDevLog(userMessage) {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // 오늘의 일지가 있는지 확인
+    const todayDiary = diaries.find(diary => diary.date === todayStr);
+    
+    if (todayDiary) {
+        addMessage(`오늘(${todayStr})의 개발일지가 이미 있네요! 내용을 확인해보세요.`, 'bot');
+    } else {
+        // 자동으로 개발일지 생성
+        const devLogContent = generateAutoDevLog();
+        
+        // 일지 폼에 자동 입력
+        document.getElementById('diaryDate').value = todayStr;
+        document.getElementById('diaryTitle').value = `오늘의 개발 성과 - ${today.toLocaleDateString()}`;
+        document.getElementById('diaryContent').value = devLogContent;
+        
+        addMessage(`오늘의 개발일지를 자동으로 생성했습니다! 아래 폼에서 확인하고 저장해주세요.`, 'bot');
+    }
+}
+
+// 자동 개발일지 내용 생성
+function generateAutoDevLog() {
+    const today = new Date();
+    const dayOfWeek = today.toLocaleDateString('ko-KR', { weekday: 'long' });
+    
+    return `오늘은 ${dayOfWeek}이었습니다.
+
+🚀 주요 작업:
+- nero developing diary 프로젝트 개발
+- 네로봇 AI 챗봇 시스템 구현
+- GitHub 연동 기능 설계
+
+💡 학습한 내용:
+- AI 챗봇 인터페이스 디자인
+- 자동 일지 생성 시스템 구상
+- 사용자 경험 개선 방법
+
+🎯 내일의 목표:
+- GitHub API 연동 완료
+- 더 정교한 AI 응답 시스템 구현
+- 사용자 피드백 반영
+
+오늘도 열심히 개발했고, 새로운 기능을 성공적으로 구현할 수 있어서 뿌듯합니다!`;
 }
 
 // 탭 전환 함수

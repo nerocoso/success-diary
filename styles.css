@@ -837,6 +837,128 @@ body {
     min-height: 100vh;
 }
 
+/* 네로봇 채팅 인터페이스 */
+.nero-bot-section {
+    background: rgba(20, 20, 20, 0.9);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 107, 157, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.bot-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.bot-header h3 {
+    background: linear-gradient(135deg, #ff6b9d, #87ceeb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.bot-header p {
+    color: #b0b0b0;
+    font-size: 0.9rem;
+}
+
+.chat-container {
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: rgba(10, 10, 10, 0.5);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    max-height: 300px;
+}
+
+.bot-message, .user-message {
+    margin-bottom: 15px;
+    display: flex;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.message-content {
+    background: rgba(255, 107, 157, 0.1);
+    padding: 12px 15px;
+    border-radius: 15px;
+    max-width: 80%;
+    border: 1px solid rgba(255, 107, 157, 0.2);
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.user-message .message-content {
+    background: rgba(135, 206, 235, 0.1);
+    border-color: rgba(135, 206, 235, 0.2);
+}
+
+.message-content i {
+    margin-right: 8px;
+    color: #ff6b9d;
+}
+
+.user-message .message-content i {
+    color: #87ceeb;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid rgba(255, 107, 157, 0.3);
+    border-radius: 25px;
+    background: rgba(20, 20, 20, 0.8);
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.chat-input:focus {
+    border-color: #ff6b9d;
+    box-shadow: 0 0 10px rgba(255, 107, 157, 0.3);
+}
+
+.chat-send-btn {
+    width: 45px;
+    height: 45px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b9d, #87ceeb);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.chat-send-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4);
+}
+
 /* 테마 선택 UI */
 .theme-header {
     text-align: center;
