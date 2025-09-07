@@ -35,8 +35,7 @@ const calendarDaysEl = document.getElementById('calendarDays');
 const prevMonthBtn = document.getElementById('prevMonth');
 const nextMonthBtn = document.getElementById('nextMonth');
 
-// 마우스 커서 관련 요소들
-let customCursor = null;
+// 마우스 커서 관련 요소들 (제거됨)
 
 // 테마 관련 요소들
 const currentThemePreview = document.getElementById('currentThemePreview');
@@ -58,8 +57,7 @@ function initializeApp() {
     // 달력 초기화
     initializeCalendar();
     
-    // 마우스 커서 초기화
-    initializeCustomCursor();
+    // 마우스 커서 초기화 제거됨
     
     // 테마 초기화
     initializeTheme();
@@ -191,9 +189,17 @@ function loadDiaries() {
         </div>
     `).join('');
     
-    // 새로 생성된 일지 항목들에 호버 효과 추가
-    const diaryItems = diaryList.querySelectorAll('.diary-item');
-    diaryItems.forEach(item => addHoverEffectToElement(item));
+    // 호버 효과 제거됨
+    
+    // 새로 생성된 일지 제목들에 그라데이션 적용
+    const diaryTitles = diaryList.querySelectorAll('.diary-item-title');
+    diaryTitles.forEach(title => {
+        const colors = getThemeColors(currentTheme);
+        title.style.background = colors.gradient;
+        title.style.webkitBackgroundClip = 'text';
+        title.style.webkitTextFillColor = 'transparent';
+        title.style.backgroundClip = 'text';
+    });
 }
 
 function deleteDiary(id) {
@@ -298,9 +304,17 @@ function loadGoals() {
         </div>
     `).join('');
     
-    // 새로 생성된 목표 항목들에 호버 효과 추가
-    const goalItems = goalsList.querySelectorAll('.goal-item');
-    goalItems.forEach(item => addHoverEffectToElement(item));
+    // 호버 효과 제거됨
+    
+    // 새로 생성된 목표 제목들에 그라데이션 적용
+    const goalTitles = goalsList.querySelectorAll('.goal-item-title');
+    goalTitles.forEach(title => {
+        const colors = getThemeColors(currentTheme);
+        title.style.background = colors.gradient;
+        title.style.webkitBackgroundClip = 'text';
+        title.style.webkitTextFillColor = 'transparent';
+        title.style.backgroundClip = 'text';
+    });
 }
 
 function completeGoal(id) {
@@ -558,8 +572,18 @@ function renderCalendar() {
                 selectDate(date);
             }
         });
-        addHoverEffectToElement(dayEl);
+        // 호버 효과 제거됨
     });
+    
+    // 달력 제목에 그라데이션 적용
+    const calendarTitle = document.querySelector('.calendar-title span:first-child');
+    if (calendarTitle) {
+        const colors = getThemeColors(currentTheme);
+        calendarTitle.style.background = colors.gradient;
+        calendarTitle.style.webkitBackgroundClip = 'text';
+        calendarTitle.style.webkitTextFillColor = 'transparent';
+        calendarTitle.style.backgroundClip = 'text';
+    }
 }
 
 function selectDate(date) {
@@ -598,54 +622,7 @@ function selectDate(date) {
     }
 }
 
-// 마우스 커서 효과 함수들
-function initializeCustomCursor() {
-    // 커스텀 커서 생성
-    customCursor = document.createElement('div');
-    customCursor.className = 'custom-cursor';
-    document.body.appendChild(customCursor);
-    
-    // 초기 커서 위치 설정 (화면 중앙)
-    customCursor.style.left = '50vw';
-    customCursor.style.top = '50vh';
-    
-    // 마우스 이동 이벤트
-    document.addEventListener('mousemove', handleMouseMove);
-    
-    // 호버 가능한 요소들에 이벤트 추가
-    const hoverElements = document.querySelectorAll('button, a, .calendar-day, .diary-item, .goal-item, .stat-card, .theme-card');
-    hoverElements.forEach(element => {
-        element.addEventListener('mouseenter', () => {
-            if (customCursor) customCursor.classList.add('hover');
-        });
-        element.addEventListener('mouseleave', () => {
-            if (customCursor) customCursor.classList.remove('hover');
-        });
-    });
-    
-    console.log('Custom cursor initialized successfully');
-}
-
-function handleMouseMove(e) {
-    const x = e.clientX;
-    const y = e.clientY;
-    
-    // 커스텀 커서 위치 업데이트
-    if (customCursor) {
-        customCursor.style.left = x + 'px';
-        customCursor.style.top = y + 'px';
-    }
-}
-
-// 동적으로 추가되는 요소들에도 호버 효과 적용
-function addHoverEffectToElement(element) {
-    element.addEventListener('mouseenter', () => {
-        if (customCursor) customCursor.classList.add('hover');
-    });
-    element.addEventListener('mouseleave', () => {
-        if (customCursor) customCursor.classList.remove('hover');
-    });
-}
+// 마우스 커서 효과 함수들 제거됨
 
 // 테마 관련 함수들
 function initializeTheme() {
@@ -656,7 +633,7 @@ function initializeTheme() {
             const theme = card.dataset.theme;
             selectTheme(theme);
         });
-        addHoverEffectToElement(card);
+        // 호버 효과 제거됨
     });
     
     // 현재 테마 적용
@@ -757,6 +734,18 @@ function updateGradientElements(colors) {
     const logo = document.querySelector('.logo');
     if (logo) {
         logo.style.background = colors.gradient;
+        logo.style.webkitBackgroundClip = 'text';
+        logo.style.webkitTextFillColor = 'transparent';
+        logo.style.backgroundClip = 'text';
+    }
+    
+    // 로고 아이콘 그라데이션 업데이트
+    const logoIcon = document.querySelector('.logo i');
+    if (logoIcon) {
+        logoIcon.style.background = colors.gradient;
+        logoIcon.style.webkitBackgroundClip = 'text';
+        logoIcon.style.webkitTextFillColor = 'transparent';
+        logoIcon.style.backgroundClip = 'text';
     }
     
     // 네비게이션 버튼 활성 상태 업데이트
@@ -771,6 +760,9 @@ function updateGradientElements(colors) {
     const sectionHeaders = document.querySelectorAll('.diary-header h2, .goals-header h2, .theme-header h2');
     sectionHeaders.forEach(header => {
         header.style.background = colors.gradient;
+        header.style.webkitBackgroundClip = 'text';
+        header.style.webkitTextFillColor = 'transparent';
+        header.style.backgroundClip = 'text';
     });
     
     // 버튼 그라데이션 업데이트
@@ -785,6 +777,9 @@ function updateGradientElements(colors) {
     const formLabels = document.querySelectorAll('.form-group label');
     formLabels.forEach(label => {
         label.style.background = `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`;
+        label.style.webkitBackgroundClip = 'text';
+        label.style.webkitTextFillColor = 'transparent';
+        label.style.backgroundClip = 'text';
     });
     
     // 통계 카드 아이콘 업데이트
@@ -799,6 +794,27 @@ function updateGradientElements(colors) {
     const statNumbers = document.querySelectorAll('.stat-content h3');
     statNumbers.forEach(number => {
         number.style.background = colors.gradient;
+        number.style.webkitBackgroundClip = 'text';
+        number.style.webkitTextFillColor = 'transparent';
+        number.style.backgroundClip = 'text';
+    });
+    
+    // 일지/목표 제목 그라데이션 업데이트
+    const itemTitles = document.querySelectorAll('.diary-item-title, .goal-item-title');
+    itemTitles.forEach(title => {
+        title.style.background = colors.gradient;
+        title.style.webkitBackgroundClip = 'text';
+        title.style.webkitTextFillColor = 'transparent';
+        title.style.backgroundClip = 'text';
+    });
+    
+    // 빈 상태 제목 그라데이션 업데이트
+    const emptyStateTitles = document.querySelectorAll('.empty-state h3');
+    emptyStateTitles.forEach(title => {
+        title.style.background = colors.gradient;
+        title.style.webkitBackgroundClip = 'text';
+        title.style.webkitTextFillColor = 'transparent';
+        title.style.backgroundClip = 'text';
     });
 }
 
