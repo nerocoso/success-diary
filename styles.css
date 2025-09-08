@@ -825,6 +825,28 @@ body {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
+/* 업데이트 배지 */
+.update-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(20, 20, 20, 0.8);
+    color: #ffffff;
+    border: 1px solid rgba(255, 107, 157, 0.5);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    text-shadow: 0 0 8px #ffffff;
+    box-shadow: 0 8px 24px rgba(255, 107, 157, 0.2);
+    animation: badgePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 107, 157, 0.0); }
+    50% { box-shadow: 0 0 24px rgba(255, 107, 157, 0.35); }
+}
+
 .login-container {
     background: transparent;
     padding: 0;

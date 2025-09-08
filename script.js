@@ -62,47 +62,290 @@ const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 
-// 공용: 네로봇 응답 요청 함수 (일지 탭/네로봇 전용 페이지 공통)
-async function fetchNeroResponse(userMessage) {
-    const apiKey = localStorage.getItem('hf_api_key'); // 선택 저장용(없어도 동작)
-    const headers = { 'Content-Type': 'application/json' };
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-
-    const resp = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ inputs: userMessage })
-    });
-
-    let data;
+// 대화 기록(경량) 저장/로드 유틸
+function getNeroHistory() {
     try {
-        data = await resp.json();
-    } catch (e) {
-        throw new Error('서버 응답을 해석하지 못했습니다.');
+        return JSON.parse(localStorage.getItem('nero_history')) || [];
+    } catch { return []; }
+
+}
+
+// 업데이트 배지: 최신 로그 표시
+function getUpdateLogs() {
+    try { return JSON.parse(localStorage.getItem('update_logs')) || []; } catch { return []; }
+}
+function addUpdateLog(message) {
+    const logs = getUpdateLogs();
+    logs.push({ t: Date.now(), message: String(message || '') });
+    try { localStorage.setItem('update_logs', JSON.stringify(logs.slice(-50))); } catch {}
+}
+function formatTime(dt) {
+    return new Date(dt).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+}
+function showUpdateBadgeIfAny() {
+    const badge = document.getElementById('updateBadge');
+    if (!badge) return;
+    const logs = getUpdateLogs();
+    if (!logs.length) {
+        badge.style.display = 'none';
+        return;
+    }
+    const latest = logs[logs.length - 1];
+    const timeStr = new Date(latest.t).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    badge.textContent = `${timeStr} 업데이트 로그가 있습니다.`;
+    badge.style.display = 'block';
+}
+function saveNeroHistory(hist) {
+    try { localStorage.setItem('nero_history', JSON.stringify(hist.slice(-10))); } catch {}
+}
+function pushNeroHistory(role, content) {
+    const hist = getNeroHistory();
+    hist.push({ t: Date.now(), role, content: String(content || '').slice(0, 2000) });
+    saveNeroHistory(hist);
+}
+
+// 사용자 학습 규칙 저장/로드 (경량)
+function getCustomRules() {
+    try { return JSON.parse(localStorage.getItem('nero_custom_rules')) || []; } catch { return []; }
+}
+function saveCustomRules(rules) {
+    try { localStorage.setItem('nero_custom_rules', JSON.stringify((rules || []).slice(-50))); } catch {}
+}
+function addCustomRule(pattern, response) {
+    const rules = getCustomRules();
+    rules.push({ pattern: String(pattern || '').slice(0, 200), response: String(response || '').slice(0, 2000) });
+    saveCustomRules(rules);
+    return rules.length;
+}
+function clearCustomRules() {
+    saveCustomRules([]);
+}
+
+// 공용: 네로봇 응답 요청 함수 (일지 탭/네로봇 전용 페이지 공통)
+// 기본값: 100% 무료 로컬 규칙 기반 어시스턴트(네트워크 호출 없음)
+// 설정(localStorage.ai_provider === 'proxy') 시 프록시 URL(localStorage.ai_proxy_url)로 요청 가능
+async function fetchNeroResponse(userMessage) {
+    const provider = (localStorage.getItem('ai_provider') || 'local').toLowerCase();
+    if (provider === 'proxy') {
+        const proxyUrl = localStorage.getItem('ai_proxy_url');
+        if (!proxyUrl) {
+            return '[설정 필요] 프록시 URL이 설정되지 않았어요. localStorage.ai_proxy_url을 설정하거나, 로컬 모드(local)로 사용해 주세요.';
+        }
+        try {
+            const resp = await fetch(proxyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inputs: userMessage })
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data?.error || data?.message || `HTTP ${resp.status}`);
+            const text = data?.generated_text || data?.text || '';
+            return text || '죄송해요, 답변을 생성하지 못했어요.';
+        } catch (e) {
+            return `프록시 통신 오류: ${e?.message || e}`;
+        }
     }
 
-    if (!resp.ok) {
-        const msg = (data && (data.error || data.message)) || `HTTP ${resp.status}`;
-        throw new Error(msg);
+    // provider === 'local' : 규칙 기반 응답 생성
+    return generateLocalAssistantResponse(userMessage);
+}
+
+// 규칙 기반(로컬) 어시스턴트: 네트워크/키 없이 동작, 기존 데이터(diaries/goals)를 활용
+function generateLocalAssistantResponse(userMessage) {
+    const msg = (userMessage || '').trim();
+    if (!msg) return '무엇을 도와드릴까요? 예: "오늘 일지 요약", "이번 주 목표 정리", "다음 할 일 추천"';
+
+    // 간단 키워드 파싱
+    const lower = msg.toLowerCase();
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    // 랜덤 선택 유틸
+    const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    // 최근 히스토리(경량)
+    const hist = getNeroHistory();
+
+    // 사용자 학습 명령 파싱
+    // 형식 예시:
+    //  - "학습: 키워드=안녕, 응답=안녕하세요! 반가워요"
+    //  - "teach: pattern=/헬프|help/i, reply=도움이 필요하신가요?"
+    const teachMatch = msg.match(/^\s*(학습|teach)\s*:\s*(.+)$/i);
+    if (teachMatch) {
+        const rest = teachMatch[2];
+        // key=value 쌍 파싱
+        const kv = Object.fromEntries(
+            rest.split(',').map(s => s.split('=').map(x => x.trim())).filter(a => a.length === 2)
+        );
+        const pattern = kv.pattern || kv.키워드 || kv.key || kv.keyword;
+        const response = kv.reply || kv.응답 || kv.res || kv.response;
+        if (!pattern || !response) {
+            return '학습 형식: 학습: 키워드=<문구> , 응답=<답변>  또는  teach: pattern=/정규식/i , reply=답변';
+        }
+        const count = addCustomRule(pattern, response);
+        return `학습 완료! 규칙 ${count}개 저장됨. (패턴: ${pattern})`;
     }
 
-    // 다양한 응답 포맷 정규화
-    let text = '';
-    if (Array.isArray(data) && data.length && data[0].generated_text) {
-        text = data[0].generated_text;
-    } else if (data && data.generated_text) {
-        text = data.generated_text;
-    } else {
-        text = typeof data === 'string' ? data : '';
+    // 학습 관리 명령
+    if (/^\s*(학습목록|list\s*teach)/i.test(msg)) {
+        const rules = getCustomRules();
+        if (rules.length === 0) return '저장된 학습 규칙이 없습니다.';
+        const lines = rules.slice(-10).map((r, i) => `${i + 1}. 패턴: ${r.pattern} → 응답: ${r.response.slice(0, 60)}${r.response.length>60?'…':''}`);
+        return `최근 학습 규칙(최대 10개):\n${lines.join('\n')}`;
+    }
+    if (/^\s*(학습초기화|학습 초기화|clear\s*teach)/i.test(msg)) {
+        clearCustomRules();
+        return '모든 학습 규칙을 초기화했습니다.';
     }
 
-    return text || '죄송해요, 답변을 생성하지 못했어요.';
+    // 사용자 학습 규칙 매칭 (우선 적용)
+    const rules = getCustomRules();
+    for (const r of rules.slice().reverse()) { // 최신 규칙 우선
+        try {
+            const p = (r.pattern || '').trim();
+            let matched = false;
+            if (/^\/.+\/[a-z]*$/i.test(p)) {
+                // /regex/flags 형식
+                const lastSlash = p.lastIndexOf('/');
+                const body = p.slice(1, lastSlash);
+                const flags = p.slice(lastSlash + 1);
+                const re = new RegExp(body, flags);
+                matched = re.test(msg);
+            } else {
+                matched = msg.toLowerCase().includes(p.toLowerCase());
+            }
+            if (matched) {
+                return r.response;
+            }
+        } catch {}
+    }
+
+    // 스몰토크 의도 처리
+    const isGreeting = /(hello|hi|hey|안녕|하이|ㅎㅇ|안뇽)/i.test(msg);
+    const isThanks   = /(thanks|thank|고마워|감사|땡큐)/i.test(msg);
+    const isBye      = /(bye|goodbye|잘가|안녕히|ㅂㅇ)/i.test(msg);
+    const isSorry    = /(sorry|미안|죄송)/i.test(msg);
+    const askName    = /(너(는)? 누구|who are you|your name|이름)/i.test(msg);
+    const askHelp    = /(도움|help|무엇|뭐(해)?|할 수)/i.test(msg);
+    const askTime    = /(시간|time|몇시)/i.test(msg);
+    const askDate    = /(날짜|date|며칠)/i.test(msg);
+
+    if (isGreeting) {
+        const hour = now.getHours();
+        const part = hour < 5 ? '깊은 밤' : hour < 11 ? '아침' : hour < 14 ? '점심' : hour < 18 ? '오후' : '저녁';
+        return rnd([
+            `안녕하세요! ${part}엔 무엇을 도와드릴까요?`,
+            `${part}이에요. 반가워요! 일지/목표/추천 중에서 무엇이 필요하신가요?`,
+            `안녕! 오늘 기분은 어떠세요? 필요하시면 목표 현황을 요약해 드릴게요.`
+        ]);
+    }
+    if (isThanks) {
+        return rnd([
+            '천만에요! 도움이 되었다니 기뻐요 🙌',
+            '언제든지요! 다른 것도 필요하시면 말씀해 주세요 🙂',
+            '별말씀을요! 오늘도 파이팅입니다 💪'
+        ]);
+    }
+    if (isBye) {
+        return rnd([
+            '좋은 하루 되세요! 다음에 또 만나요 👋',
+            '안녕히 가세요! 내일도 멋진 성과 기대할게요 ✨',
+            '또 필요하시면 불러주세요. 바이!'
+        ]);
+    }
+    if (isSorry) {
+        return rnd([
+            '괜찮아요! 함께 해결해봐요 🙂',
+            '문제없습니다. 어디부터 도와드릴까요?',
+            '사과하실 필요 없어요. 지금부터 차근히 해봐요!'
+        ]);
+    }
+    if (askName) {
+        return rnd([
+            '저는 네로봇이에요. 성공일지와 목표 관리를 도와드려요 🤖',
+            '네로봇입니다! 개발/목표/일지와 관련된 일을 빠르게 도와드릴게요.',
+            '네로봇이라고 해요. 무엇이든 편하게 물어보세요!'
+        ]);
+    }
+    if (askHelp) {
+        return '제가 할 수 있는 일 예시: "최근 일지 요약", "목표 현황", "오늘 일지 생성", "다음 할 일 추천". 어떤 걸 도와드릴까요?';
+    }
+    if (askTime) {
+        return `지금 시간은 ${now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 입니다.`;
+    }
+    if (askDate) {
+        return `오늘 날짜는 ${now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} 입니다.`;
+    }
+
+    // 유틸: 최근 N개 일지/목표
+    const recentDiaries = (diaries || []).slice(0, 5);
+    const recentGoals = (goals || []).slice(0, 5);
+
+    // 1) 일지 요약/생성 관련
+    if (lower.includes('일지') || lower.includes('diary')) {
+        if (lower.includes('요약')) {
+            if (!diaries || diaries.length === 0) return '아직 작성된 일지가 없어요. "일지 작성"을 먼저 해볼까요?';
+            const lines = diaries.slice(0, 5).map(d => `- ${formatDate(d.date)}: ${d.title}`);
+            return `최근 일지 요약입니다:\n${lines.join('\n')}\n\n특정 날짜나 제목으로 자세히 보고 싶으면 말씀해 주세요.`;
+        }
+        if (lower.includes('생성') || lower.includes('작성')) {
+            const exists = diaries.some(d => d.date === todayStr);
+            if (exists) return '오늘 일지는 이미 있어요! 내용을 업데이트하거나 새로운 목표를 추가해보는 건 어떨까요?';
+            const auto = generateAutoDevLog();
+            // 폼 채우기 (UI 편의)
+            const dateEl = document.getElementById('diaryDate');
+            const titleEl = document.getElementById('diaryTitle');
+            const contentEl = document.getElementById('diaryContent');
+            if (dateEl && titleEl && contentEl) {
+                dateEl.value = todayStr;
+                titleEl.value = `오늘의 개발 성과 - ${now.toLocaleDateString()}`;
+                contentEl.value = auto;
+            }
+            return '오늘의 일지 초안을 자동으로 채워두었어요. 확인 후 저장해 주세요!';
+        }
+    }
+
+    // 2) 목표 관리/요약
+    if (lower.includes('목표') || lower.includes('goal')) {
+        if (!goals || goals.length === 0) return '아직 설정된 목표가 없어요. 우측 상단의 "새 목표 추가"로 시작해 보세요!';
+        const completed = goals.filter(g => g.status === 'completed');
+        const pending = goals.filter(g => g.status !== 'completed');
+        const clines = completed.slice(0, 5).map(g => `- ✅ ${g.title} (기한: ${formatDate(g.deadline)})`);
+        const plines = pending.slice(0, 5).map(g => `- ⏳ ${g.title} (기한: ${formatDate(g.deadline)})`);
+        return `목표 현황입니다:\n\n완료(${completed.length})\n${clines.join('\n') || '- 없음'}\n\n진행중(${pending.length})\n${plines.join('\n') || '- 없음'}\n\n특정 목표 상세/우선순위 조정도 도와드릴 수 있어요.`;
+    }
+
+    // 3) 일반 요청: 간단한 제안/가이드
+    if (lower.includes('추천') || lower.includes('할') || lower.includes('todo') || lower.includes('next')) {
+        const suggestions = [];
+        if (!goals || goals.length === 0) {
+            suggestions.push('새 목표를 하나 만들어볼까요? (예: "1주일간 하루 30분 코딩")');
+        } else {
+            const pending = goals.filter(g => g.status !== 'completed');
+            const nextGoal = pending.sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
+            if (nextGoal) suggestions.push(`가장 임박한 목표: "${nextGoal.title}"를 20~30분만 집중해서 진행해보세요.`);
+        }
+        if (!diaries || diaries.length === 0) {
+            suggestions.push('오늘 한 일을 간단히 적어 "첫 번째 성공 일지"를 만들어 보세요.');
+        } else {
+            suggestions.push('오늘의 일지를 열어 진행 상황을 기록하고, 내일의 할 일을 한 줄로 적어보세요.');
+        }
+        return `다음 액션 제안:\n- ${suggestions.join('\n- ')}`;
+    }
+
+    // 4) 기본 응답
+    // 최근 대화 한 줄을 반영한 기본 응답 (경량)
+    const lastUser = [...hist].reverse().find(h => h.role === 'user');
+    const tail = lastUser ? ` 방금 말씀하신 "${(lastUser.content || '').slice(0, 20)}"(에) 대해 더 자세히 알려주셔도 좋아요.` : '';
+    return '현재는 로컬 어시스턴트 모드입니다. 예: "최근 일지 요약", "목표 현황", "다음 할 일 추천" 같은 요청을 해보세요.' + tail;
 }
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
     startLoginCloudAnimation();
+    // 업데이트 배지 표시
+    showUpdateBadgeIfAny();
     // 허브 카드 클릭 이벤트 (전역 참조 사용)
     const goDiaryCard = document.getElementById('goDiaryCard');
     const goNeroBotCard = document.getElementById('goNeroBotCard');
@@ -292,6 +535,7 @@ function sendMessage() {
     
     // 사용자 메시지 추가
     addMessage(message, 'user');
+    pushNeroHistory('user', message);
     chatInput.value = '';
     
     // 네로봇 응답 처리
@@ -357,6 +601,7 @@ function sendNeroMessage() {
     if (message === '') return;
     
     addNeroMessage(message, 'user');
+    pushNeroHistory('user', message);
     neroChatInput.value = '';
     
     // 네로봇 응답 처리
@@ -394,11 +639,13 @@ async function handleNeroBotResponseForPage(userMessage) {
         const botMsgs = neroChatMessages.querySelectorAll('.bot-message');
         if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
         addNeroMessage(text, 'bot');
+        pushNeroHistory('bot', text);
     } catch (e) {
         const neroChatMessages = document.getElementById('neroChatMessages');
         const botMsgs = neroChatMessages.querySelectorAll('.bot-message');
         if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
         addNeroMessage('네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.', 'bot');
+        pushNeroHistory('bot', '네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.');
     }
 }
 
@@ -410,10 +657,12 @@ async function handleNeroBotResponse(userMessage) {
         const botMsgs = document.querySelectorAll('.bot-message');
         if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
         addMessage(text, 'bot');
+        pushNeroHistory('bot', text);
     } catch (e) {
         const botMsgs = document.querySelectorAll('.bot-message');
         if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
         addMessage('네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.', 'bot');
+        pushNeroHistory('bot', '네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.');
     }
 }
 
