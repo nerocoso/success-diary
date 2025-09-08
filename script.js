@@ -53,9 +53,8 @@ const mainApp = document.getElementById('mainApp');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('loginError');
-// 허브/네로봇 화면 참조(전역)
+// 허브 화면 참조(전역)
 const hubScreenEl = document.getElementById('hubScreen');
-const neroBotAppEl = document.getElementById('neroBotApp');
 
 // 네로봇 관련 요소들
 const chatMessages = document.getElementById('chatMessages');
@@ -348,7 +347,6 @@ document.addEventListener('DOMContentLoaded', function() {
     showUpdateBadgeIfAny();
     // 허브 카드 클릭 이벤트 (전역 참조 사용)
     const goDiaryCard = document.getElementById('goDiaryCard');
-    const goNeroBotCard = document.getElementById('goNeroBotCard');
     if (goDiaryCard) {
         goDiaryCard.addEventListener('click', function() {
             if (hubScreenEl) hubScreenEl.style.display = 'none';
@@ -356,16 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (neroBotAppEl) neroBotAppEl.style.display = 'none';
         });
     }
-    if (goNeroBotCard) {
-        goNeroBotCard.addEventListener('click', function() {
-            if (hubScreenEl) hubScreenEl.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'none';
-            if (neroBotAppEl) neroBotAppEl.style.display = 'flex';
-        });
-    }
-
-    // 네로봇 페이지 이벤트 설정
-    setupNeroBotPage();
+    // 네로봇 전용 페이지 제거됨
 });
 
 function startLoginCloudAnimation() {
@@ -403,7 +392,6 @@ function showMainApp() {
     loginScreen.style.display = 'none';
     if (hubScreenEl) hubScreenEl.style.display = 'flex';
     if (mainApp) mainApp.style.display = 'none';
-    if (neroBotAppEl) neroBotAppEl.style.display = 'none';
 }
 
 function setupLoginEventListeners() {
