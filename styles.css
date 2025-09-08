@@ -15,6 +15,35 @@ body {
     overflow-x: hidden;
 }
 
+/* 일지 본문 접기/펼치기 */
+.diary-item-content {
+    position: relative;
+    white-space: pre-wrap;
+    transition: max-height 260ms ease, padding 200ms ease;
+    will-change: max-height;
+}
+.diary-item-content.collapsed {
+    max-height: 180px;
+    overflow: hidden;
+}
+.diary-item-content.collapsed::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 56px;
+    background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.9) 100%);
+}
+.toggle-content-btn {
+    margin-top: 8px;
+    background: #0b1f3a;
+    color: #cfe3ff;
+    border: 1px solid #1e3a8a;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.toggle-content-btn:hover { filter: brightness(1.1); }
+
 .container {
     max-width: 1400px;
     margin: 0 auto;

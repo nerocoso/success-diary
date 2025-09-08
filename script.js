@@ -979,7 +979,7 @@ function loadDiaries() {
             <div class="empty-state">
                 <i class="fas fa-book-open"></i>
                 <h3>아직 작성된 일지가 없습니다</h3>
-                <p>첫 번째 성공 일지를 작성해보세요!</p>
+                <p>첫 번째 코딩일지를 작성해보세요!</p>
             </div>
         `;
         return;
@@ -994,7 +994,8 @@ function loadDiaries() {
                 </div>
                 <div class="diary-item-mood">${getMoodText(diary.mood)}</div>
             </div>
-            <div class="diary-item-content">${escapeHtml(diary.content).replace(/\n/g, '<br>')}</div>
+            <div class="diary-item-content">${escapeHtml(diary.content)}</div>
+            <button class="toggle-content-btn" data-state="collapsed">더 보기</button>
             <div class="diary-item-actions">
                 <button class="btn btn-danger btn-small" onclick="deleteDiary(${diary.id})">
                     <i class="fas fa-trash"></i>
@@ -1004,9 +1005,33 @@ function loadDiaries() {
         </div>
     `).join('');
     
-    // 호버 효과 제거됨
-    
-    // 테마 시스템 제거: 제목 그라데이션 적용 안 함
+    // 긴 본문은 기본 접기 적용 + 토글 이벤트 바인딩
+    const items = diaryList.querySelectorAll('.diary-item');
+    items.forEach(it => {
+        const content = it.querySelector('.diary-item-content');
+        const btn = it.querySelector('.toggle-content-btn');
+        if (!content || !btn) return;
+        // 기본 접기: 길이가 일정 이상이거나 줄 수가 많을 때
+        if (content.textContent.length > 400 || content.textContent.split('\n').length > 8) {
+            content.classList.add('collapsed');
+            btn.dataset.state = 'collapsed';
+            btn.textContent = '더 보기';
+        } else {
+            btn.style.display = 'none';
+        }
+        btn.addEventListener('click', () => {
+            const collapsed = btn.dataset.state !== 'expanded';
+            if (collapsed) {
+                content.classList.remove('collapsed');
+                btn.dataset.state = 'expanded';
+                btn.textContent = '접기';
+            } else {
+                content.classList.add('collapsed');
+                btn.dataset.state = 'collapsed';
+                btn.textContent = '더 보기';
+            }
+        });
+    });
 }
 
 function deleteDiary(id) {
