@@ -362,6 +362,8 @@ document.addEventListener('DOMContentLoaded', function() {
     startLoginCloudAnimation();
     // 업데이트 배지 표시
     showUpdateBadgeIfAny();
+    // 네로봇 입력창 예시 날짜를 오늘 날짜로 업데이트
+    updateChatPlaceholderDate();
     // 허브 카드 클릭 이벤트 (전역 참조 사용)
     const goDiaryCard = document.getElementById('goDiaryCard');
     const goNeroBotCard = document.getElementById('goNeroBotCard');
@@ -514,6 +516,26 @@ function setupEventListeners() {
     prevMonthBtn.addEventListener('click', () => changeMonth(-1));
     nextMonthBtn.addEventListener('click', () => changeMonth(1));
     
+    // GitHub 오늘 요약
+    const ghBtn = document.getElementById('githubDailySummaryBtn');
+    if (ghBtn) {
+        ghBtn.addEventListener('click', async () => {
+            ghBtn.disabled = true;
+            ghBtn.innerHTML = '<i class="fab fa-github"></i> 불러오는 중...';
+            try {
+                const md = await buildTodayGithubSummary({ username: 'nerocoso', repo: 'success-diary' });
+                autoFillDiaryWithMarkdown(md);
+                showNotification('GitHub 오늘 활동 요약을 코딩일지에 채웠습니다.', 'success');
+            } catch (e) {
+                console.error(e);
+                showNotification('GitHub 요약 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'error');
+            } finally {
+                ghBtn.disabled = false;
+                ghBtn.innerHTML = '<i class="fab fa-github"></i> GitHub 오늘 요약';
+            }
+        });
+    }
+
     // 네로봇 채팅 이벤트
     setupNeroBot();
 }
@@ -728,6 +750,20 @@ function switchTab(tabName) {
     if (tabName === 'stats') {
         updateStats();
     }
+    // 일지 탭 전환 시 예시 날짜 갱신
+    if (tabName === 'diary') {
+        updateChatPlaceholderDate();
+    }
+}
+
+// 네로봇(일지 탭) 입력창 플레이스홀더에 오늘 날짜 적용
+function updateChatPlaceholderDate() {
+    const input = document.getElementById('chatInput');
+    if (!input) return;
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    input.placeholder = `예: ${m}월 ${d}일 개발일지 요약해서 작성해줘`;
 }
 
 // 일지 관련 함수들
