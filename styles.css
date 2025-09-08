@@ -829,15 +829,16 @@ body {
 .login-main-title {
     color: #ffffff;
     font-weight: bold;
-    font-size: 48px;
-    text-shadow: 0 0 12px #ffffff, 0 0 24px #ffffff, 0 0 36px #ffffff;
+    font-size: 64px;
+    text-shadow: 0 0 15px #ffffff, 0 0 30px #ffffff, 0 0 45px #ffffff;
     text-align: center;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    margin-bottom: 40px;
     position: absolute;
-    top: 15%;
+    top: 10%;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 10001;
+    width: 100%;
 }
 
 .input-label {
