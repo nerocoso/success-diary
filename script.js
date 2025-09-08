@@ -543,6 +543,8 @@ function setupEventListeners() {
 // --- GitHub 비로그인 요약 유틸들 ---
 // 오늘 날짜 범위(KST) since/until ISO
 function getTodayRangeISO() {
+    // KST(UTC+9)에서의 오늘 00:00:00 ~ 23:59:59를
+    // UTC 타임스탬프로 변환: 시작은 -9h, 끝은 +14:59:59h
     const now = new Date();
     const tz = now.getTimezoneOffset(); // 분
     const kstOffsetMin = -9 * 60; // UTC+9
@@ -551,13 +553,13 @@ function getTodayRangeISO() {
     const y = kstNow.getFullYear();
     const m = kstNow.getMonth();
     const d = kstNow.getDate();
-    const start = new Date(Date.UTC(y, m, d, 0, 0, 0));
-    const end = new Date(Date.UTC(y, m, d, 23, 59, 59));
-    return { since: start.toISOString(), until: end.toISOString(), y, m: m + 1, d };
+    const startUTC = new Date(Date.UTC(y, m, d, -9, 0, 0));   // KST 00:00 -> UTC -9h
+    const endUTC   = new Date(Date.UTC(y, m, d, 14, 59, 59)); // KST 23:59:59 -> UTC +14:59:59
+    return { since: startUTC.toISOString(), until: endUTC.toISOString(), y, m: m + 1, d };
 }
 
 async function fetchCommitsNoAuth({ username, repo, since, until }) {
-    const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/commits?since=${encodeURIComponent(since)}&until=${encodeURIComponent(until)}`;
+    const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/commits?per_page=100&since=${encodeURIComponent(since)}&until=${encodeURIComponent(until)}`;
     const resp = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
     if (!resp.ok) throw new Error(`GitHub API 오류: ${resp.status}`);
     return resp.json();
