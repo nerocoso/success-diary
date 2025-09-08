@@ -1313,3 +1313,122 @@ body {
     text-shadow: 0 0 10px #1ed76099;
     letter-spacing: 0.01em;
 }
+
+/* 네로봇 전용 페이지 스타일 */
+.nero-bot-app {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+}
+
+.nero-bot-container {
+    background: rgba(30, 30, 30, 0.85);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 51, 102, 0.25), 0 1.5px 8px 0 rgba(0, 51, 102, 0.18);
+    padding: 30px;
+    width: 90%;
+    max-width: 800px;
+    height: 80%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 107, 157, 0.3);
+}
+
+.nero-bot-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 107, 157, 0.2);
+}
+
+.nero-bot-header h2 {
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 0 12px #ffffff, 0 0 24px #ffffff;
+}
+
+.nero-bot-header p {
+    color: #b0b0b0;
+    font-size: 1rem;
+    margin-bottom: 15px;
+}
+
+.back-to-hub-btn {
+    background: rgba(255, 107, 157, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 107, 157, 0.3);
+    border-radius: 12px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 8px #ffffff;
+}
+
+.back-to-hub-btn:hover {
+    background: rgba(255, 107, 157, 0.2);
+    border-color: rgba(255, 107, 157, 0.6);
+    transform: translateY(-2px);
+}
+
+.nero-chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.nero-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: rgba(20, 20, 20, 0.5);
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 107, 157, 0.2);
+}
+
+.nero-chat-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nero-chat-input {
+    flex: 1;
+    background: rgba(20, 20, 20, 0.7);
+    border: 1px solid rgba(255, 107, 157, 0.3);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 1rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.nero-chat-input:focus {
+    border-color: rgba(255, 107, 157, 0.6);
+    box-shadow: 0 0 10px rgba(255, 107, 157, 0.3);
+}
+
+.nero-chat-send-btn {
+    background: rgba(255, 107, 157, 0.2);
+    color: #ffffff;
+    border: 1px solid rgba(255, 107, 157, 0.4);
+    border-radius: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 8px #ffffff;
+}
+
+.nero-chat-send-btn:hover {
+    background: rgba(255, 107, 157, 0.4);
+    transform: scale(1.05);
+}

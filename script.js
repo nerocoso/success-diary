@@ -53,11 +53,51 @@ const mainApp = document.getElementById('mainApp');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('loginError');
+// 허브/네로봇 화면 참조(전역)
+const hubScreenEl = document.getElementById('hubScreen');
+const neroBotAppEl = document.getElementById('neroBotApp');
 
 // 네로봇 관련 요소들
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
+
+// 공용: 네로봇 응답 요청 함수 (일지 탭/네로봇 전용 페이지 공통)
+async function fetchNeroResponse(userMessage) {
+    const apiKey = localStorage.getItem('hf_api_key'); // 선택 저장용(없어도 동작)
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+    const resp = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ inputs: userMessage })
+    });
+
+    let data;
+    try {
+        data = await resp.json();
+    } catch (e) {
+        throw new Error('서버 응답을 해석하지 못했습니다.');
+    }
+
+    if (!resp.ok) {
+        const msg = (data && (data.error || data.message)) || `HTTP ${resp.status}`;
+        throw new Error(msg);
+    }
+
+    // 다양한 응답 포맷 정규화
+    let text = '';
+    if (Array.isArray(data) && data.length && data[0].generated_text) {
+        text = data[0].generated_text;
+    } else if (data && data.generated_text) {
+        text = data.generated_text;
+    } else {
+        text = typeof data === 'string' ? data : '';
+    }
+
+    return text || '죄송해요, 답변을 생성하지 못했어요.';
+}
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,22 +105,25 @@ document.addEventListener('DOMContentLoaded', function() {
     startLoginCloudAnimation();
     // 허브 카드 클릭 이벤트
     const goDiaryCard = document.getElementById('goDiaryCard');
-    const goProjectCard = document.getElementById('goProjectCard');
+    const goNeroBotCard = document.getElementById('goNeroBotCard');
     const hubScreen = document.getElementById('hubScreen');
     const mainApp = document.getElementById('mainApp');
-    const projectApp = document.getElementById('projectApp');
-    if (goDiaryCard && goProjectCard) {
+    const neroBotApp = document.getElementById('neroBotApp');
+    if (goDiaryCard && goNeroBotCard) {
         goDiaryCard.onclick = function() {
             hubScreen.style.display = 'none';
             mainApp.style.display = 'block';
-            projectApp.style.display = 'none';
+            neroBotApp.style.display = 'none';
         };
-        goProjectCard.onclick = function() {
+        goNeroBotCard.onclick = function() {
             hubScreen.style.display = 'none';
             mainApp.style.display = 'none';
-            projectApp.style.display = 'flex';
+            neroBotApp.style.display = 'block';
         };
     }
+    
+    // 네로봇 페이지 이벤트 설정
+    setupNeroBotPage();
 });
 
 function startLoginCloudAnimation() {
@@ -116,9 +159,9 @@ function showLoginScreen() {
 
 function showMainApp() {
     loginScreen.style.display = 'none';
-    hubScreen.style.display = 'flex';
-    mainApp.style.display = 'none';
-    projectApp.style.display = 'none';
+    if (hubScreenEl) hubScreenEl.style.display = 'flex';
+    if (mainApp) mainApp.style.display = 'none';
+    if (neroBotAppEl) neroBotAppEl.style.display = 'none';
 }
 
 function setupLoginEventListeners() {
@@ -279,21 +322,98 @@ function addMessage(content, sender) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// 네로봇 응답 처리
+// 네로봇 전용 페이지 설정
+function setupNeroBotPage() {
+    const neroChatInput = document.getElementById('neroChatInput');
+    const neroSendMessageBtn = document.getElementById('neroSendMessageBtn');
+    const backToHubFromBot = document.getElementById('backToHubFromBot');
+    
+    if (neroSendMessageBtn) {
+        neroSendMessageBtn.addEventListener('click', sendNeroMessage);
+    }
+    
+    if (neroChatInput) {
+        neroChatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendNeroMessage();
+            }
+        });
+    }
+    
+    if (backToHubFromBot) {
+        backToHubFromBot.addEventListener('click', function() {
+            const neroBotApp = document.getElementById('neroBotApp');
+            const hubScreen = document.getElementById('hubScreen');
+            neroBotApp.style.display = 'none';
+            hubScreen.style.display = 'flex';
+        });
+    }
+}
+
+// 네로봇 전용 페이지 메시지 전송
+function sendNeroMessage() {
+    const neroChatInput = document.getElementById('neroChatInput');
+    const message = neroChatInput.value.trim();
+    
+    if (message === '') return;
+    
+    addNeroMessage(message, 'user');
+    neroChatInput.value = '';
+    
+    // 네로봇 응답 처리
+    setTimeout(() => {
+        handleNeroBotResponseForPage(message);
+    }, 1000);
+}
+
+// 네로봇 전용 페이지 메시지 추가
+function addNeroMessage(message, sender) {
+    const neroChatMessages = document.getElementById('neroChatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    
+    if (sender === 'bot') {
+        messageContent.innerHTML = `<i class="fas fa-robot"></i> ${message}`;
+    } else {
+        messageContent.textContent = message;
+    }
+    
+    messageDiv.appendChild(messageContent);
+    neroChatMessages.appendChild(messageDiv);
+    neroChatMessages.scrollTop = neroChatMessages.scrollHeight;
+}
+
+// 네로봇 전용 페이지 응답 처리 (공용 fetch 사용)
+async function handleNeroBotResponseForPage(userMessage) {
+    addNeroMessage('네로봇이 생각 중...', 'bot');
+    try {
+        const text = await fetchNeroResponse(userMessage);
+        const neroChatMessages = document.getElementById('neroChatMessages');
+        const botMsgs = neroChatMessages.querySelectorAll('.bot-message');
+        if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
+        addNeroMessage(text, 'bot');
+    } catch (e) {
+        const neroChatMessages = document.getElementById('neroChatMessages');
+        const botMsgs = neroChatMessages.querySelectorAll('.bot-message');
+        if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
+        addNeroMessage('네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.', 'bot');
+    }
+}
+
+// 네로봇 응답 처리 (일지 탭, 공용 fetch 사용)
 async function handleNeroBotResponse(userMessage) {
     addMessage('네로봇이 생각 중...', 'bot');
     try {
-        const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ inputs: userMessage })
-        });
-        const data = await response.json();
-        // 기존 '생각 중...' 메시지 삭제
+        const text = await fetchNeroResponse(userMessage);
         const botMsgs = document.querySelectorAll('.bot-message');
-        if (botMsgs.length > 0) botMsgs[botMsgs.length-1].remove();
-        addMessage(data.generated_text || '죄송해요, 답변을 생성하지 못했어요.', 'bot');
+        if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
+        addMessage(text, 'bot');
     } catch (e) {
+        const botMsgs = document.querySelectorAll('.bot-message');
+        if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
         addMessage('네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.', 'bot');
     }
 }
