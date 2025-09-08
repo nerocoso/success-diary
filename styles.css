@@ -780,6 +780,27 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    /* 추가: 구름처럼 떠있는 효과 */
+    background: rgba(30, 30, 30, 0.85);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(135, 206, 235, 0.25), 0 1.5px 8px 0 rgba(255, 255, 255, 0.08);
+    padding: 36px 40px 32px 40px;
+    animation: floatCloud 3.5s ease-in-out infinite;
+}
+
+@keyframes floatCloud {
+    0% {
+        transform: translateY(0px);
+        box-shadow: 0 8px 32px 0 rgba(135, 206, 235, 0.25), 0 1.5px 8px 0 rgba(255, 255, 255, 0.08);
+    }
+    50% {
+        transform: translateY(-16px);
+        box-shadow: 0 16px 48px 0 rgba(135, 206, 235, 0.30), 0 3px 16px 0 rgba(255, 255, 255, 0.10);
+    }
+    100% {
+        transform: translateY(0px);
+        box-shadow: 0 8px 32px 0 rgba(135, 206, 235, 0.25), 0 1.5px 8px 0 rgba(255, 255, 255, 0.08);
+    }
 }
 
 .input-group {
