@@ -68,6 +68,7 @@ function getNeroHistory() {
     try {
         return JSON.parse(localStorage.getItem('nero_history')) || [];
     } catch { return []; }
+} // added closing bracket here
 
 // 전환 로딩 오버레이 유틸
 function showLoadingOverlay() {
@@ -101,8 +102,6 @@ function transitionTo(target) {
         // 전환 완료 후 약간 딜레이로 오버레이 제거
         setTimeout(hideLoadingOverlay, 120);
     }, DURATION);
-}
-
 }
 
 // 업데이트 배지: 최신 로그 표시
@@ -394,6 +393,8 @@ document.addEventListener('DOMContentLoaded', function() {
             transitionTo('nero');
         });
     }
+    // 네로봇 전용 페이지 버튼/뒤로가기 이벤트 연결
+    setupNeroBotPage();
 });
 
 function startLoginCloudAnimation() {
