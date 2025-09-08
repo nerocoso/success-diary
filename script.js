@@ -63,7 +63,7 @@ const sendMessageBtn = document.getElementById('sendMessageBtn');
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
     startLoginCloudAnimation();
-    setupCustomMiniPlayer();
+    setupSpotifyMiniPlayer();
 });
 
 function startLoginCloudAnimation() {
@@ -1089,6 +1089,30 @@ function setupCustomMiniPlayer() {
     const playBtn = document.getElementById('cmp-playpause');
     const playIcon = document.getElementById('cmp-play-icon');
     const pauseIcon = document.getElementById('cmp-pause-icon');
+    let isPlaying = true;
+    playBtn.addEventListener('click', function() {
+        const scIframe = document.getElementById('sc-bgm');
+        if (!scIframe) return;
+        if (isPlaying) {
+            scIframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
+            playIcon.style.display = '';
+            pauseIcon.style.display = 'none';
+        } else {
+            scIframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = '';
+        }
+        isPlaying = !isPlaying;
+    });
+    // 초기 상태: 재생 중이므로 pause 아이콘 표시
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = '';
+}
+
+function setupSpotifyMiniPlayer() {
+    const playBtn = document.getElementById('smp-playpause');
+    const playIcon = document.getElementById('smp-play-icon');
+    const pauseIcon = document.getElementById('smp-pause-icon');
     let isPlaying = true;
     playBtn.addEventListener('click', function() {
         const scIframe = document.getElementById('sc-bgm');

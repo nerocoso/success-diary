@@ -1163,75 +1163,53 @@ body {
     font-weight: 500;
 }
 
-.custom-mini-player {
-    width: 320px;
-    margin: 28px auto 0 auto;
-    padding: 16px 20px;
-    background: rgba(10, 20, 30, 0.95);
-    border-radius: 18px;
-    box-shadow: 0 4px 32px 0 #00336699, 0 0 12px #3fffd6cc;
+.spotify-mini-player {
+    width: 220px;
+    height: 44px;
+    margin: 18px auto 0 auto;
+    padding: 0 16px;
+    background: #181818;
+    border-radius: 22px;
+    box-shadow: 0 2px 16px #1ed76033, 0 0 0 2px #1ed76055;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     position: relative;
-    border: 1.5px solid #3fffd6;
-    font-family: 'Consolas', 'Inter', 'Segoe UI', monospace;
+    border: none;
+    font-family: 'Inter', 'Consolas', 'Segoe UI', monospace;
     z-index: 2;
 }
-.custom-mini-player .cmp-album-art img {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    box-shadow: 0 0 12px #3fffd6cc, 0 0 8px #00336699;
-    background: #000;
-}
-.custom-mini-player .cmp-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-.custom-mini-player .cmp-title {
-    font-size: 1.08rem;
-    font-weight: 700;
-    color: #3fffd6;
-    text-shadow: 0 0 8px #3fffd6cc, 0 0 16px #00336699;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.custom-mini-player .cmp-artist {
-    font-size: 0.92rem;
-    color: #b0eaff;
-    opacity: 0.8;
-    text-shadow: 0 0 6px #3fffd6cc;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.custom-mini-player .cmp-btn {
+.spotify-mini-player .smp-btn {
     background: none;
     border: none;
     outline: none;
     cursor: pointer;
-    margin: 0 6px;
+    margin: 0 2px 0 0;
     padding: 0;
     display: flex;
     align-items: center;
     transition: transform 0.15s;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    justify-content: center;
 }
-.custom-mini-player .cmp-btn:hover {
+.spotify-mini-player .smp-btn:hover {
+    background: #232323;
+    box-shadow: 0 0 8px #1ed760cc;
     transform: scale(1.13);
-    filter: drop-shadow(0 0 8px #3fffd6cc);
 }
-.custom-mini-player .cmp-sc-link {
-    margin-left: 8px;
-    display: flex;
-    align-items: center;
-    filter: drop-shadow(0 0 6px #3fffd6cc);
-    transition: filter 0.2s;
+.spotify-mini-player .smp-text {
+    font-size: 0.98rem;
+    color: #e0ffe0;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-shadow: 0 0 6px #1ed76099;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.custom-mini-player .cmp-sc-link:hover {
-    filter: drop-shadow(0 0 16px #3fffd6cc) brightness(1.2);
+.spotify-mini-player .smp-text b {
+    color: #1ed760;
+    font-weight: 700;
 }

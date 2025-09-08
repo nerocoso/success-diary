@@ -25,22 +25,13 @@
                     ACCESS DENIED
                 </div>
             </div>
-            <!-- 커스텀 미니 플레이어 (스포티파이/해킹 테마) -->
-            <div id="sc-mini-player" class="custom-mini-player">
-                <div class="cmp-album-art">
-                    <img src="https://cdn-icons-png.flaticon.com/512/145/145809.png" alt="SoundCloud" />
-                </div>
-                <div class="cmp-info">
-                    <div class="cmp-title" id="cmp-title">SoundCloud Playlist</div>
-                    <div class="cmp-artist" id="cmp-artist">by 1701-918834356</div>
-                </div>
-                <button class="cmp-btn" id="cmp-playpause" title="재생/일시정지">
-                    <svg id="cmp-play-icon" width="28" height="28" viewBox="0 0 28 28"><polygon points="7,5 23,14 7,23" fill="#3fffd6"/></svg>
-                    <svg id="cmp-pause-icon" width="28" height="28" viewBox="0 0 28 28" style="display:none"><rect x="7" y="5" width="5" height="18" rx="2" fill="#3fffd6"/><rect x="16" y="5" width="5" height="18" rx="2" fill="#3fffd6"/></svg>
+            <!-- 스포티파이 느낌의 미니멀 커스텀 플레이어 -->
+            <div id="sc-mini-player" class="spotify-mini-player">
+                <button class="smp-btn" id="smp-playpause" title="재생/일시정지">
+                    <svg id="smp-play-icon" width="22" height="22" viewBox="0 0 22 22" style="vertical-align:middle;"><polygon points="5,3 19,11 5,19" fill="#1ed760"/></svg>
+                    <svg id="smp-pause-icon" width="22" height="22" viewBox="0 0 22 22" style="display:none;vertical-align:middle;"><rect x="5" y="3" width="4" height="16" rx="2" fill="#1ed760"/><rect x="13" y="3" width="4" height="16" rx="2" fill="#1ed760"/></svg>
                 </button>
-                <a href="https://soundcloud.com/1701-918834356/sets/ibl7mny1khz0" target="_blank" class="cmp-sc-link" title="SoundCloud에서 열기">
-                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111624.png" alt="SoundCloud" style="width:22px;height:22px;filter:drop-shadow(0 0 6px #3fffd6);" />
-                </a>
+                <span class="smp-text">지금 재생 중: <b>SoundCloud Playlist</b></span>
             </div>
         </div>
         <!-- SoundCloud 배경음악 임베드 (숨김) -->
