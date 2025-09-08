@@ -653,7 +653,7 @@ function loadGoals() {
     }
 
     goalsList.innerHTML = goals.map(goal => `
-        <div class="goal-item">
+        <div class="goal-item ${goal.status}">
             <div class="goal-item-header">
                 <div>
                     <div class="goal-item-title">${escapeHtml(goal.title)}</div>

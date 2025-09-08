@@ -424,6 +424,13 @@ body {
     background: rgba(30, 30, 30, 0.8);
     padding: 25px;
     border-radius: 15px;
+    border: 1px solid rgba(255, 107, 157, 0.2);
+    position: relative;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.diary-item,
+.goal-item {
     border: 1px solid rgba(255, 107, 157, 0.3);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 107, 157, 0.2), 0 0 25px rgba(255, 107, 157, 0.1);
     border-left: 5px solid #ff6b9d;
@@ -435,6 +442,60 @@ body {
     /* transform 효과 제거됨 (성능 최적화) */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 107, 157, 0.3), 0 0 40px rgba(255, 107, 157, 0.2);
     border-color: rgba(255, 107, 157, 0.5);
+}
+
+/* 완료된 목표: 뚜렷한 시각 차별화 */
+.goal-item.completed {
+    background: linear-gradient(180deg, rgba(22, 40, 26, 0.9), rgba(18, 30, 22, 0.9));
+    border-color: rgba(46, 204, 113, 0.6);
+    box-shadow: 0 12px 30px rgba(46, 204, 113, 0.25), 0 0 20px rgba(46, 204, 113, 0.25);
+}
+
+.goal-item.completed::before {
+    content: '\2714  Completed';
+    position: absolute;
+    top: 14px;
+    right: -8px;
+    transform: rotate(2deg);
+    font-size: 0.8rem;
+    color: #0b2b18;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    border: 1px solid rgba(46, 204, 113, 0.7);
+    padding: 6px 10px;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(46, 204, 113, 0.35);
+    letter-spacing: 0.5px;
+}
+
+.goal-item.completed .goal-item-title {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    opacity: 0.9;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.35);
+}
+
+.goal-item.completed .goal-item-description {
+    opacity: 0.9;
+}
+
+.goal-item.completed .goal-item-status.completed {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border-color: rgba(46, 204, 113, 0.5);
+    box-shadow: 0 0 14px rgba(46, 204, 113, 0.25);
+}
+
+/* 진행중 목표: 파란계열 악센트 강화 */
+.goal-item.in-progress {
+    border-color: rgba(100, 200, 255, 0.35);
+    box-shadow: 0 8px 22px rgba(100, 200, 255, 0.15);
+}
+
+.goal-item.in-progress .goal-item-status.in-progress {
+    background: rgba(100, 200, 255, 0.2);
+    color: #64c8ff;
+    border-color: rgba(100, 200, 255, 0.4);
+    box-shadow: 0 0 12px rgba(100, 200, 255, 0.25);
 }
 
 .diary-item-header,
