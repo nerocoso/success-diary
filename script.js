@@ -103,25 +103,24 @@ async function fetchNeroResponse(userMessage) {
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
     startLoginCloudAnimation();
-    // 허브 카드 클릭 이벤트
+    // 허브 카드 클릭 이벤트 (전역 참조 사용)
     const goDiaryCard = document.getElementById('goDiaryCard');
     const goNeroBotCard = document.getElementById('goNeroBotCard');
-    const hubScreen = document.getElementById('hubScreen');
-    const mainApp = document.getElementById('mainApp');
-    const neroBotApp = document.getElementById('neroBotApp');
-    if (goDiaryCard && goNeroBotCard) {
-        goDiaryCard.onclick = function() {
-            hubScreen.style.display = 'none';
-            mainApp.style.display = 'block';
-            neroBotApp.style.display = 'none';
-        };
-        goNeroBotCard.onclick = function() {
-            hubScreen.style.display = 'none';
-            mainApp.style.display = 'none';
-            neroBotApp.style.display = 'block';
-        };
+    if (goDiaryCard) {
+        goDiaryCard.addEventListener('click', function() {
+            if (hubScreenEl) hubScreenEl.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'block';
+            if (neroBotAppEl) neroBotAppEl.style.display = 'none';
+        });
     }
-    
+    if (goNeroBotCard) {
+        goNeroBotCard.addEventListener('click', function() {
+            if (hubScreenEl) hubScreenEl.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'none';
+            if (neroBotAppEl) neroBotAppEl.style.display = 'block';
+        });
+    }
+
     // 네로봇 페이지 이벤트 설정
     setupNeroBotPage();
 });
