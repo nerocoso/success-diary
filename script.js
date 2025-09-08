@@ -83,8 +83,8 @@ function hideLoadingOverlay() {
 // 화면 전환: 'hub' | 'main' | 'nero'
 function transitionTo(target) {
     showLoadingOverlay();
-    // 약간의 연출 시간 (파도 250~500ms 정도가 자연스러움)
-    const DURATION = 420;
+    // 파도 연출 시간 (더 길게 1.2s)
+    const DURATION = 1200;
     setTimeout(() => {
         if (target === 'hub') {
             if (hubScreenEl) hubScreenEl.style.display = 'flex';
@@ -388,11 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
             transitionTo('main');
         });
     }
-    if (goNeroBotCard) {
-        goNeroBotCard.addEventListener('click', function() {
-            transitionTo('nero');
-        });
-    }
+    // 네로봇 카드 제거됨 (존재할 경우 무시)
     // 네로봇 전용 페이지 버튼/뒤로가기 이벤트 연결
     setupNeroBotPage();
 });
