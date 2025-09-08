@@ -83,8 +83,8 @@ function hideLoadingOverlay() {
 // 화면 전환: 'hub' | 'main' | 'nero'
 function transitionTo(target) {
     showLoadingOverlay();
-    // 파도 연출 시간 (더 길게 1.2s)
-    const DURATION = 1200;
+    // 파도 연출 시간 (사용자 요청: 5초)
+    const DURATION = 5000;
     setTimeout(() => {
         if (target === 'hub') {
             if (hubScreenEl) hubScreenEl.style.display = 'flex';

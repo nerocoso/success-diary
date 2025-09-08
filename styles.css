@@ -9,11 +9,21 @@
 .loading-overlay {
     position: fixed;
     inset: 0;
-    background: linear-gradient(180deg, #000 0%, #020814 55%, #031d33 100%);
+    background: #000; /* 순수 블랙 배경 */
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 20000;
+}
+.loading-overlay::before {
+    /* 아주 은은한 비늘(세이가이하) 패턴 */
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0.12;
+    background-image:
+      radial-gradient(circle at 12px 12px, #2a2a2a 4px, transparent 5px),
+      radial-gradient(circle at 32px 32px, #2a2a2a 4px, transparent 5px);
+    background-size: 40px 40px;
 }
 .loading-inner { position: relative; width: 100%; height: 100%; }
 .loading-text {
@@ -36,17 +46,17 @@
 /* SVG 파도 (data-uri). 색상은 레이어마다 다르게 */
 .wave1 {
     height: 50%;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%230a5d9b' fill-opacity='0.65' d='M0,64 C 240,96 480,32 720,64 C 960,96 1200,64 1440,64 L1440,120 L0,120 Z'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%23ffffff' fill-opacity='0.90' d='M0,64 C 240,96 480,32 720,64 C 960,96 1200,64 1440,64 L1440,120 L0,120 Z'/></svg>");
     animation: waveScroll1 10s linear infinite;
 }
 .wave2 {
     height: 65%;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%231a72b7' fill-opacity='0.55' d='M0,72 C 200,40 520,112 820,72 C 1120,32 1320,92 1440,80 L1440,120 L0,120 Z'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%23ffffff' fill-opacity='0.75' d='M0,72 C 200,40 520,112 820,72 C 1120,32 1320,92 1440,80 L1440,120 L0,120 Z'/></svg>");
     animation: waveScroll2 14s linear infinite;
 }
 .wave3 {
     height: 80%;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%232b89cf' fill-opacity='0.5' d='M0,84 C 220,120 520,40 760,84 C 1000,128 1200,60 1440,84 L1440,120 L0,120 Z'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%23ffffff' fill-opacity='0.60' d='M0,84 C 220,120 520,40 760,84 C 1000,128 1200,60 1440,84 L1440,120 L0,120 Z'/></svg>");
     animation: waveScroll3 18s linear infinite;
 }
 
