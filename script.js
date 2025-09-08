@@ -347,14 +347,21 @@ document.addEventListener('DOMContentLoaded', function() {
     showUpdateBadgeIfAny();
     // 허브 카드 클릭 이벤트 (전역 참조 사용)
     const goDiaryCard = document.getElementById('goDiaryCard');
+    const goNeroBotCard = document.getElementById('goNeroBotCard');
     if (goDiaryCard) {
         goDiaryCard.addEventListener('click', function() {
             if (hubScreenEl) hubScreenEl.style.display = 'none';
             if (mainApp) mainApp.style.display = 'block';
-            if (neroBotAppEl) neroBotAppEl.style.display = 'none';
         });
     }
-    // 네로봇 전용 페이지 제거됨
+    if (goNeroBotCard) {
+        goNeroBotCard.addEventListener('click', function() {
+            const w = 520, h = 740;
+            const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
+            const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+            window.open('nerobot.html', 'neroBotPopup', `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,noopener,noreferrer`);
+        });
+    }
 });
 
 function startLoginCloudAnimation() {

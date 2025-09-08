@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>네로봇 대화창</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --pink:#ff6b9d; --bg:#0a0a0a; --panel: rgba(30,30,30,.85); }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#000; color:#e0e0e0; font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; height:100vh; display:flex; }
+    .wrap { margin:auto; width:100%; max-width:680px; height:90vh; display:flex; flex-direction:column; background:var(--panel); border:1px solid rgba(255,107,157,.3); border-radius:18px; box-shadow:0 8px 32px rgba(0,0,0,.45); overflow:hidden; }
+    .head { padding:16px 18px; border-bottom:1px solid rgba(255,107,157,.25); display:flex; align-items:center; gap:10px; }
+    .head h1 { margin:0; font-size:1.2rem; font-weight:700; color:#fff; text-shadow:0 0 12px #fff; display:flex; align-items:center; gap:8px; }
+    .head .spacer { flex:1; }
+    .head button { background:transparent; color:#fff; border:1px solid rgba(255,107,157,.35); border-radius:10px; padding:6px 10px; cursor:pointer; }
+    .head button:hover { box-shadow:0 0 14px rgba(255,107,157,.35); }
+
+    .msgs { flex:1; padding:16px; overflow-y:auto; background:rgba(20,20,20,.4); }
+    .row { display:flex; margin:10px 0; }
+    .row.user { justify-content:flex-end; }
+    .bubble { max-width:75%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,107,157,.3); background:rgba(255,107,157,.12); line-height:1.45; font-size:.96rem; }
+    .row.user .bubble { background:rgba(135,206,235,.12); border-color:rgba(135,206,235,.35); }
+    .bubble i { margin-right:6px; color:var(--pink); }
+
+    .input { display:flex; gap:10px; padding:12px; border-top:1px solid rgba(255,107,157,.25); background:rgba(0,0,0,.25); }
+    .input input { flex:1; background:rgba(0,0,0,.45); border:1px solid rgba(255,107,157,.35); border-radius:10px; color:#eaeaea; padding:12px 14px; font-size:.96rem; outline:none; }
+    .input button { background: linear-gradient(135deg, #ff6b9d, #87ceeb); border:none; color:#0b0b0b; font-weight:700; border-radius:10px; padding:0 16px; cursor:pointer; }
+    .tip { padding:10px 16px; font-size:.85rem; color:#bdbdbd; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <h1><i class="fas fa-robot"></i> 네로봇</h1>
+      <div class="spacer"></div>
+      <button id="closeBtn"><i class="fas fa-xmark"></i> 닫기</button>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="row bot"><div class="bubble"><i class="fas fa-robot"></i>안녕하세요! 저는 네로봇입니다. 무엇을 도와드릴까요?</div></div>
+    </div>
+    <div class="input">
+      <input type="text" id="inp" placeholder="메시지를 입력하세요. 예) 최근 일지 요약 / 목표 현황 / 다음 할 일 추천" />
+      <button id="send"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <div class="tip">도움말: "학습: 키워드=커피, 응답=커피 좋죠!" 처럼 규칙을 가르칠 수 있어요.</div>
+  </div>
+
+  <script>
+    // --- Local assistant copied (lightweight) ---
+    function getLocal(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
+    function setLocal(key, val){ try { localStorage.setItem(key, JSON.stringify(val)) } catch {}
+    }
+
+    function getCustomRules(){ return getLocal('nero_custom_rules', []) }
+    function saveCustomRules(r){ setLocal('nero_custom_rules', (r||[]).slice(-50)) }
+    function addCustomRule(pattern, response){ const r=getCustomRules(); r.push({pattern:String(pattern||'').slice(0,200), response:String(response||'').slice(0,2000)}); saveCustomRules(r); return r.length }
+    function clearCustomRules(){ saveCustomRules([]) }
+
+    function generateLocalAssistantResponse(msg){
+      const diaries = getLocal('diaries', []);
+      const goals = getLocal('goals', []);
+      const text = (msg||'').trim();
+      if(!text) return '무엇을 도와드릴까요? 예: "최근 일지 요약", "목표 현황", "다음 할 일 추천"';
+      const lower = text.toLowerCase();
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const rnd = (a)=>a[Math.floor(Math.random()*a.length)];
+
+      // teach commands
+      const teachMatch = text.match(/^\s*(학습|teach)\s*:\s*(.+)$/i);
+      if(teachMatch){
+        const rest = teachMatch[2];
+        const kv = Object.fromEntries(rest.split(',').map(s=>s.split('=').map(x=>x.trim())).filter(a=>a.length===2));
+        const pattern = kv.pattern || kv.키워드 || kv.key || kv.keyword;
+        const response = kv.reply || kv.응답 || kv.res || kv.response;
+        if(!pattern || !response){
+          return '학습 형식: 학습: 키워드=<문구> , 응답=<답변>  또는  teach: pattern=/정규식/i , reply=답변';
+        }
+        const count = addCustomRule(pattern, response);
+        return `학습 완료! 규칙 ${count}개 저장됨. (패턴: ${pattern})`;
+      }
+      if(/^\s*(학습목록|list\s*teach)/i.test(text)){
+        const rules=getCustomRules();
+        if(!rules.length) return '저장된 학습 규칙이 없습니다.';
+        const lines = rules.slice(-10).map((r,i)=>`${i+1}. 패턴: ${r.pattern} → 응답: ${r.response.slice(0,60)}${r.response.length>60?'…':''}`);
+        return `최근 학습 규칙(최대 10개):\n${lines.join('\n')}`;
+      }
+      if(/^\s*(학습초기화|학습 초기화|clear\s*teach)/i.test(text)){
+        clearCustomRules();
+        return '모든 학습 규칙을 초기화했습니다.';
+      }
+      // custom rules match (latest first)
+      const rules = getCustomRules();
+      for(const r of rules.slice().reverse()){
+        try{
+          const p=(r.pattern||'').trim();
+          let matched=false;
+          if(/^\/.+\/[a-z]*$/i.test(p)){
+            const last=p.lastIndexOf('/'); const body=p.slice(1,last); const flags=p.slice(last+1); const re=new RegExp(body,flags); matched=re.test(text);
+          } else {
+            matched = text.toLowerCase().includes(p.toLowerCase());
+          }
+          if(matched) return r.response;
+        }catch{}
+      }
+
+      // small talk
+      const isGreeting=/(hello|hi|hey|안녕|하이|ㅎㅇ|안뇽)/i.test(text);
+      const isThanks=/(thanks|thank|고마워|감사|땡큐)/i.test(text);
+      const isBye=/(bye|goodbye|잘가|안녕히|ㅂㅇ)/i.test(text);
+      const isSorry=/(sorry|미안|죄송)/i.test(text);
+      const askName=/(너(는)? 누구|who are you|your name|이름)/i.test(text);
+      const askHelp=/(도움|help|무엇|뭐(해)?|할 수)/i.test(text);
+      const askTime=/(시간|time|몇시)/i.test(text);
+      const askDate=/(날짜|date|며칠)/i.test(text);
+      if(isGreeting){ const h=now.getHours(); const part=h<5?'깊은 밤':h<11?'아침':h<14?'점심':h<18?'오후':'저녁'; return rnd([`안녕하세요! ${part}엔 무엇을 도와드릴까요?`, `${part}이에요. 반가워요! 일지/목표/추천 중에서 무엇이 필요하신가요?`, `안녕! 오늘 기분은 어떠세요? 필요하시면 목표 현황을 요약해 드릴게요.`]) }
+      if(isThanks){ return rnd(['천만에요! 도움이 되었다니 기뻐요 🙌','언제든지요! 다른 것도 필요하시면 말씀해 주세요 🙂','별말씀을요! 오늘도 파이팅입니다 💪']) }
+      if(isBye){ return rnd(['좋은 하루 되세요! 다음에 또 만나요 👋','안녕히 가세요! 내일도 멋진 성과 기대할게요 ✨','또 필요하시면 불러주세요. 바이!']) }
+      if(isSorry){ return rnd(['괜찮아요! 함께 해결해봐요 🙂','문제없습니다. 어디부터 도와드릴까요?','사과하실 필요 없어요. 지금부터 차근히 해봐요!']) }
+      if(askName){ return rnd(['저는 네로봇이에요. 성공일지와 목표 관리를 도와드려요 🤖','네로봇입니다! 개발/목표/일지와 관련된 일을 빠르게 도와드릴게요.','네로봇이라고 해요. 무엇이든 편하게 물어보세요!']) }
+      if(askHelp){ return '제가 할 수 있는 일 예시: "최근 일지 요약", "목표 현황", "오늘 일지 생성", "다음 할 일 추천". 어떤 걸 도와드릴까요?' }
+      if(askTime){ return `지금 시간은 ${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 입니다.` }
+      if(askDate){ return `오늘 날짜는 ${now.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'})} 입니다.` }
+
+      // diary/goal helpers
+      const formatDate = (d)=>{ try { return new Date(d).toLocaleDateString('ko-KR') } catch { return d } };
+      if(lower.includes('일지') || lower.includes('diary')){
+        if(lower.includes('요약')){
+          if(!diaries.length) return '아직 작성된 일지가 없어요. "일지 작성"을 먼저 해볼까요?';
+          const lines = diaries.slice(0,5).map(d=>`- ${formatDate(d.date)}: ${d.title}`);
+          return `최근 일지 요약입니다:\n${lines.join('\n')}\n\n특정 날짜나 제목으로 자세히 보고 싶으면 말씀해 주세요.`;
+        }
+        if(lower.includes('생성') || lower.includes('작성')){
+          const exists = diaries.some(d=>d.date===todayStr);
+          if(exists) return '오늘 일지는 이미 있어요! 내용을 업데이트하거나 새로운 목표를 추가해보는 건 어떨까요?';
+          return '오늘의 일지 초안을 자동으로 채워두었어요. 메인 앱에서 확인 후 저장해 주세요!';
+        }
+      }
+      if(lower.includes('목표') || lower.includes('goal')){
+        if(!goals.length) return '아직 설정된 목표가 없어요. 우측 상단의 "새 목표 추가"로 시작해 보세요!';
+        const completed = goals.filter(g=>g.status==='completed');
+        const pending = goals.filter(g=>g.status!=='completed');
+        const cl = completed.slice(0,5).map(g=>`- ✅ ${g.title} (기한: ${formatDate(g.deadline)})`);
+        const pl = pending.slice(0,5).map(g=>`- ⏳ ${g.title} (기한: ${formatDate(g.deadline)})`);
+        return `목표 현황입니다:\n\n완료(${completed.length})\n${cl.join('\n') || '- 없음'}\n\n진행중(${pending.length})\n${pl.join('\n') || '- 없음'}`;
+      }
+
+      return '현재는 로컬 어시스턴트 모드입니다. 예: "최근 일지 요약", "목표 현황", "다음 할 일 추천" 같은 요청을 해보세요.';
+    }
+
+    async function fetchNeroResponsePopup(userMessage){
+      const provider = (localStorage.getItem('ai_provider')||'local').toLowerCase();
+      if(provider==='proxy'){
+        const url = localStorage.getItem('ai_proxy_url');
+        if(!url) return '[설정 필요] 프록시 URL이 설정되지 않았어요.';
+        try{
+          const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputs:userMessage})});
+          const data = await r.json();
+          if(!r.ok) throw new Error(data?.error||data?.message||`HTTP ${r.status}`);
+          return data?.generated_text || data?.text || '죄송해요, 답변을 생성하지 못했어요.';
+        }catch(e){
+          return `프록시 통신 오류: ${e?.message||e}`;
+        }
+      }
+      return generateLocalAssistantResponse(userMessage);
+    }
+
+    // --- UI ---
+    const msgs = document.getElementById('msgs');
+    const inp = document.getElementById('inp');
+    const send = document.getElementById('send');
+    const closeBtn = document.getElementById('closeBtn');
+
+    function addRow(text, who){
+      const row = document.createElement('div');
+      row.className = 'row ' + (who==='user'?'user':'bot');
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = (who==='bot'?'<i class="fas fa-robot"></i>':'<i class="fas fa-user"></i>') + (text||'');
+      row.appendChild(bubble);
+      msgs.appendChild(row);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    async function handleSend(){
+      const text = inp.value.trim();
+      if(!text) return;
+      addRow(text,'user');
+      inp.value = '';
+      addRow('네로봇이 생각 중...','bot');
+      const reply = await fetchNeroResponsePopup(text);
+      // replace the last bot placeholder
+      const botBubbles = msgs.querySelectorAll('.row.bot');
+      if(botBubbles.length){ botBubbles[botBubbles.length-1].querySelector('.bubble').innerHTML = '<i class="fas fa-robot"></i>' + reply; }
+    }
+
+    send.addEventListener('click', handleSend);
+    inp.addEventListener('keypress', (e)=>{ if(e.key==='Enter') handleSend(); });
+    closeBtn.addEventListener('click', ()=> window.close());
+
+    // focus input initially
+    setTimeout(()=> inp.focus(), 200);
+  </script>
+</body>
+</html>
