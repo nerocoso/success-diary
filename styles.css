@@ -14,7 +14,10 @@
     align-items: center;
     justify-content: center;
     z-index: 20000;
+    opacity: 0;
+    transition: opacity 220ms ease;
 }
+.loading-overlay.show { opacity: 1; }
 .loading-overlay::before {
     /* 아주 은은한 비늘(세이가이하) 패턴 */
     content: '';

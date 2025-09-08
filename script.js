@@ -74,10 +74,16 @@ function getNeroHistory() {
 function showLoadingOverlay() {
     if (!loadingOverlay) return;
     loadingOverlay.style.display = 'flex';
+    // 다음 프레임에 show 클래스를 붙여 transition이 적용되도록 함
+    requestAnimationFrame(() => loadingOverlay.classList.add('show'));
 }
 function hideLoadingOverlay() {
     if (!loadingOverlay) return;
-    loadingOverlay.style.display = 'none';
+    // 페이드아웃 후 display:none 처리
+    loadingOverlay.classList.remove('show');
+    setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+    }, 240); // CSS transition(220ms) 보다 약간 길게
 }
 
 // 화면 전환: 'hub' | 'main' | 'nero'
