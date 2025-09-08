@@ -5,67 +5,6 @@
     box-sizing: border-box;
 }
 
-/* 전환용 로딩 오버레이 */
-.loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: #000; /* 순수 블랙 배경 */
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 20000;
-    opacity: 0;
-    transition: opacity 220ms ease;
-}
-.loading-overlay.show { opacity: 1; }
-.loading-overlay::before {
-    /* 아주 은은한 비늘(세이가이하) 패턴 */
-    content: '';
-    position: absolute; inset: 0;
-    opacity: 0.12;
-    background-image:
-      radial-gradient(circle at 12px 12px, #2a2a2a 4px, transparent 5px),
-      radial-gradient(circle at 32px 32px, #2a2a2a 4px, transparent 5px);
-    background-size: 40px 40px;
-}
-.loading-inner { position: relative; width: 100%; height: 100%; }
-.loading-text {
-    position: absolute;
-    top: 35%; left: 50%; transform: translate(-50%, -50%);
-    color: #e0e0e0; letter-spacing: 0.2em; opacity: 0.85; font-weight: 600;
-}
-
-/* 바다 파도 레이어 */
-.waves { position: absolute; left: 0; right: 0; bottom: 0; height: 42vh; pointer-events: none; }
-.wave {
-    position: absolute; left: 0; bottom: 0; width: 300%; height: 50%;
-    background-repeat: repeat-x;
-    background-position-x: 0;
-    background-size: 1200px 120px;
-    opacity: 0.7;
-    filter: drop-shadow(0 -6px 12px rgba(0,0,0,0.35));
-}
-
-/* SVG 파도 (data-uri). 색상은 레이어마다 다르게 */
-.wave1 {
-    height: 50%;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%23ffffff' fill-opacity='0.90' d='M0,64 C 240,96 480,32 720,64 C 960,96 1200,64 1440,64 L1440,120 L0,120 Z'/></svg>");
-    animation: waveScroll1 10s linear infinite;
-}
-.wave2 {
-    height: 65%;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%23ffffff' fill-opacity='0.75' d='M0,72 C 200,40 520,112 820,72 C 1120,32 1320,92 1440,80 L1440,120 L0,120 Z'/></svg>");
-    animation: waveScroll2 14s linear infinite;
-}
-.wave3 {
-    height: 80%;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120'><path fill='%23ffffff' fill-opacity='0.60' d='M0,84 C 220,120 520,40 760,84 C 1000,128 1200,60 1440,84 L1440,120 L0,120 Z'/></svg>");
-    animation: waveScroll3 18s linear infinite;
-}
-
-@keyframes waveScroll1 { 0% { transform: translateX(0); } 100% { transform: translateX(-1200px); } }
-@keyframes waveScroll2 { 0% { transform: translateX(0); } 100% { transform: translateX(-800px); } }
-@keyframes waveScroll3 { 0% { transform: translateX(0); } 100% { transform: translateX(-600px); } }
 
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

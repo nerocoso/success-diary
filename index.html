@@ -34,7 +34,7 @@
         <div class="hub-card-group">
             <div class="hub-card" id="goDiaryCard">
                 <div class="hub-card-icon">📔</div>
-                <div class="hub-card-title">성공 일지</div>
+                <div class="hub-card-title">코딩일지</div>
             </div>
         </div>
     </div>
@@ -48,7 +48,7 @@
                     <i class="fas fa-trophy"></i>
                     nero developing diary
                 </h1>
-                <p class="subtitle">우리의 성공을 기록하고 목표를 달성해보세요</p>
+                <p class="subtitle">우리의 코딩을 기록하고 목표를 달성해보세요</p>
             </div>
     </header>
 
@@ -66,10 +66,7 @@
             <i class="fas fa-chart-line"></i>
             통계
         </button>
-        <button class="nav-btn" data-tab="theme">
-            <i class="fas fa-palette"></i>
-            테마
-        </button>
+        
     </nav>
 
     <div class="container">
@@ -109,7 +106,7 @@
             <!-- 일지 탭 -->
             <section id="diary" class="tab-content active">
                 <div class="diary-header">
-                    <h2>오늘의 성공 일지</h2>
+                    <h2>코딩일지</h2>
                     <button class="btn btn-primary" id="addDiaryBtn">
                         <i class="fas fa-plus"></i>
                         새 일지 작성
@@ -267,85 +264,7 @@
                 </div>
             </section>
 
-            <!-- 테마 탭 -->
-            <section id="theme" class="tab-content">
-                <div class="theme-header">
-                    <h2>테마 선택</h2>
-                    <p>원하는 네온 그라데이션 테마를 선택해보세요</p>
-                </div>
-                
-                <div class="theme-grid">
-                    <div class="theme-card" data-theme="pink-sky">
-                        <div class="theme-preview pink-sky-gradient"></div>
-                        <div class="theme-info">
-                            <h3>핑크 스카이</h3>
-                            <p>핑크 → 하늘색</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="orange-pink">
-                        <div class="theme-preview orange-pink-gradient"></div>
-                        <div class="theme-info">
-                            <h3>오렌지 핑크</h3>
-                            <p>주황 → 핑크</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="red-blue">
-                        <div class="theme-preview red-blue-gradient"></div>
-                        <div class="theme-info">
-                            <h3>레드 블루</h3>
-                            <p>빨강 → 파랑</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="green-blue">
-                        <div class="theme-preview green-blue-gradient"></div>
-                        <div class="theme-info">
-                            <h3>그린 블루</h3>
-                            <p>초록 → 파랑</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="purple-pink">
-                        <div class="theme-preview purple-pink-gradient"></div>
-                        <div class="theme-info">
-                            <h3>퍼플 핑크</h3>
-                            <p>보라 → 핑크</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="cyan-purple">
-                        <div class="theme-preview cyan-purple-gradient"></div>
-                        <div class="theme-info">
-                            <h3>시안 퍼플</h3>
-                            <p>청록 → 보라</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="yellow-orange">
-                        <div class="theme-preview yellow-orange-gradient"></div>
-                        <div class="theme-info">
-                            <h3>옐로우 오렌지</h3>
-                            <p>노랑 → 주황</p>
-                        </div>
-                    </div>
-                    
-                    <div class="theme-card" data-theme="blue-cyan">
-                        <div class="theme-preview blue-cyan-gradient"></div>
-                        <div class="theme-info">
-                            <h3>블루 시안</h3>
-                            <p>파랑 → 청록</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="current-theme">
-                    <h3>현재 테마</h3>
-                    <div class="current-theme-preview" id="currentThemePreview"></div>
-                    <p id="currentThemeName">핑크 스카이</p>
-                </div>
-            </section>
+            
         </main>
     </div>
 
@@ -375,18 +294,6 @@
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 전환용 로딩 오버레이 -->
-    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-        <div class="loading-inner">
-            <div class="waves">
-                <div class="wave wave1"></div>
-                <div class="wave wave2"></div>
-                <div class="wave wave3"></div>
-            </div>
-            <div class="loading-text">Loading...</div>
         </div>
     </div>
 

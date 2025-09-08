@@ -56,7 +56,6 @@ const loginError = document.getElementById('loginError');
 // 허브/네로봇 화면 참조(전역)
 const hubScreenEl = document.getElementById('hubScreen');
 const neroBotAppEl = document.getElementById('neroBotApp');
-const loadingOverlay = document.getElementById('loadingOverlay');
 
 // 네로봇 관련 요소들
 const chatMessages = document.getElementById('chatMessages');
@@ -70,44 +69,21 @@ function getNeroHistory() {
     } catch { return []; }
 } // added closing bracket here
 
-// 전환 로딩 오버레이 유틸
-function showLoadingOverlay() {
-    if (!loadingOverlay) return;
-    loadingOverlay.style.display = 'flex';
-    // 다음 프레임에 show 클래스를 붙여 transition이 적용되도록 함
-    requestAnimationFrame(() => loadingOverlay.classList.add('show'));
-}
-function hideLoadingOverlay() {
-    if (!loadingOverlay) return;
-    // 페이드아웃 후 display:none 처리
-    loadingOverlay.classList.remove('show');
-    setTimeout(() => {
-        loadingOverlay.style.display = 'none';
-    }, 240); // CSS transition(220ms) 보다 약간 길게
-}
-
 // 화면 전환: 'hub' | 'main' | 'nero'
 function transitionTo(target) {
-    showLoadingOverlay();
-    // 파도 연출 시간 (사용자 요청: 5초)
-    const DURATION = 5000;
-    setTimeout(() => {
-        if (target === 'hub') {
-            if (hubScreenEl) hubScreenEl.style.display = 'flex';
-            if (mainApp) mainApp.style.display = 'none';
-            if (neroBotAppEl) neroBotAppEl.style.display = 'none';
-        } else if (target === 'main') {
-            if (hubScreenEl) hubScreenEl.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'block';
-            if (neroBotAppEl) neroBotAppEl.style.display = 'none';
-        } else if (target === 'nero') {
-            if (hubScreenEl) hubScreenEl.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'none';
-            if (neroBotAppEl) neroBotAppEl.style.display = 'flex';
-        }
-        // 전환 완료 후 약간 딜레이로 오버레이 제거
-        setTimeout(hideLoadingOverlay, 120);
-    }, DURATION);
+    if (target === 'hub') {
+        if (hubScreenEl) hubScreenEl.style.display = 'flex';
+        if (mainApp) mainApp.style.display = 'none';
+        if (neroBotAppEl) neroBotAppEl.style.display = 'none';
+    } else if (target === 'main') {
+        if (hubScreenEl) hubScreenEl.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        if (neroBotAppEl) neroBotAppEl.style.display = 'none';
+    } else if (target === 'nero') {
+        if (hubScreenEl) hubScreenEl.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'none';
+        if (neroBotAppEl) neroBotAppEl.style.display = 'flex';
+    }
 }
 
 // 업데이트 배지: 최신 로그 표시
@@ -512,9 +488,6 @@ function initializeApp() {
     // 달력 초기화
     initializeCalendar();
     
-    // 테마 초기화
-    initializeTheme();
-    
     // 데이터 로드 및 표시
     loadDiaries();
     loadGoals();
@@ -843,15 +816,7 @@ function loadDiaries() {
     
     // 호버 효과 제거됨
     
-    // 새로 생성된 일지 제목들에 그라데이션 적용
-    const diaryTitles = diaryList.querySelectorAll('.diary-item-title');
-    diaryTitles.forEach(title => {
-        const colors = getThemeColors(currentTheme);
-        title.style.background = colors.gradient;
-        title.style.webkitBackgroundClip = 'text';
-        title.style.webkitTextFillColor = 'transparent';
-        title.style.backgroundClip = 'text';
-    });
+    // 테마 시스템 제거: 제목 그라데이션 적용 안 함
 }
 
 function deleteDiary(id) {
@@ -958,15 +923,7 @@ function loadGoals() {
     
     // 호버 효과 제거됨
     
-    // 새로 생성된 목표 제목들에 그라데이션 적용
-    const goalTitles = goalsList.querySelectorAll('.goal-item-title');
-    goalTitles.forEach(title => {
-        const colors = getThemeColors(currentTheme);
-        title.style.background = colors.gradient;
-        title.style.webkitBackgroundClip = 'text';
-        title.style.webkitTextFillColor = 'transparent';
-        title.style.backgroundClip = 'text';
-    });
+    // 테마 시스템 제거: 제목 그라데이션 적용 안 함
 }
 
 function completeGoal(id) {
@@ -1227,15 +1184,7 @@ function renderCalendar() {
         // 호버 효과 제거됨
     });
     
-    // 달력 제목에 그라데이션 적용
-    const calendarTitle = document.querySelector('.calendar-title span:first-child');
-    if (calendarTitle) {
-        const colors = getThemeColors(currentTheme);
-        calendarTitle.style.background = colors.gradient;
-        calendarTitle.style.webkitBackgroundClip = 'text';
-        calendarTitle.style.webkitTextFillColor = 'transparent';
-        calendarTitle.style.backgroundClip = 'text';
-    }
+    // 테마 시스템 제거: 달력 제목 그라데이션 적용 안 함
 }
 
 function selectDate(date) {
