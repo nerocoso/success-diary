@@ -53,8 +53,10 @@ const mainApp = document.getElementById('mainApp');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('loginError');
-// 허브 화면 참조(전역)
+// 허브/네로봇 화면 참조(전역)
 const hubScreenEl = document.getElementById('hubScreen');
+const neroBotAppEl = document.getElementById('neroBotApp');
+const loadingOverlay = document.getElementById('loadingOverlay');
 
 // 네로봇 관련 요소들
 const chatMessages = document.getElementById('chatMessages');
@@ -66,6 +68,40 @@ function getNeroHistory() {
     try {
         return JSON.parse(localStorage.getItem('nero_history')) || [];
     } catch { return []; }
+
+// 전환 로딩 오버레이 유틸
+function showLoadingOverlay() {
+    if (!loadingOverlay) return;
+    loadingOverlay.style.display = 'flex';
+}
+function hideLoadingOverlay() {
+    if (!loadingOverlay) return;
+    loadingOverlay.style.display = 'none';
+}
+
+// 화면 전환: 'hub' | 'main' | 'nero'
+function transitionTo(target) {
+    showLoadingOverlay();
+    // 약간의 연출 시간 (파도 250~500ms 정도가 자연스러움)
+    const DURATION = 420;
+    setTimeout(() => {
+        if (target === 'hub') {
+            if (hubScreenEl) hubScreenEl.style.display = 'flex';
+            if (mainApp) mainApp.style.display = 'none';
+            if (neroBotAppEl) neroBotAppEl.style.display = 'none';
+        } else if (target === 'main') {
+            if (hubScreenEl) hubScreenEl.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'block';
+            if (neroBotAppEl) neroBotAppEl.style.display = 'none';
+        } else if (target === 'nero') {
+            if (hubScreenEl) hubScreenEl.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'none';
+            if (neroBotAppEl) neroBotAppEl.style.display = 'flex';
+        }
+        // 전환 완료 후 약간 딜레이로 오버레이 제거
+        setTimeout(hideLoadingOverlay, 120);
+    }, DURATION);
+}
 
 }
 
@@ -350,16 +386,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const goNeroBotCard = document.getElementById('goNeroBotCard');
     if (goDiaryCard) {
         goDiaryCard.addEventListener('click', function() {
-            if (hubScreenEl) hubScreenEl.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'block';
+            transitionTo('main');
         });
     }
     if (goNeroBotCard) {
         goNeroBotCard.addEventListener('click', function() {
-            const w = 520, h = 740;
-            const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
-            const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
-            window.open('nerobot.html', 'neroBotPopup', `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,noopener,noreferrer`);
+            transitionTo('nero');
         });
     }
 });
@@ -580,10 +612,7 @@ function setupNeroBotPage() {
     
     if (backToHubFromBot) {
         backToHubFromBot.addEventListener('click', function() {
-            const neroBotApp = document.getElementById('neroBotApp');
-            const hubScreen = document.getElementById('hubScreen');
-            neroBotApp.style.display = 'none';
-            hubScreen.style.display = 'flex';
+            transitionTo('hub');
         });
     }
 }

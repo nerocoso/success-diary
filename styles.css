@@ -5,6 +5,35 @@
     box-sizing: border-box;
 }
 
+/* 전환용 로딩 오버레이 */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(1000px 600px at 50% 100%, rgba(20,20,20,0.85), #000);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+}
+.loading-inner { text-align: center; }
+.loading-text { color: #e0e0e0; margin-top: 14px; letter-spacing: 0.2em; opacity: 0.85; }
+
+.waves { position: relative; width: 260px; height: 60px; overflow: hidden; }
+.wave {
+    position: absolute; left: -50%; width: 200%; height: 100%;
+    background: radial-gradient(circle at 50% 0, rgba(135,206,235,0.35), rgba(255,107,157,0.25) 40%, transparent 60%);
+    opacity: 0.35; filter: blur(6px);
+}
+.wave1 { animation: waveMove 3.6s ease-in-out infinite; top: 0; }
+.wave2 { animation: waveMove 4.4s ease-in-out reverse infinite; top: 8px; opacity: 0.28; }
+.wave3 { animation: waveMove 5.2s ease-in-out infinite; top: 16px; opacity: 0.22; }
+
+@keyframes waveMove {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-25%); }
+    100% { transform: translateX(0); }
+}
+
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;

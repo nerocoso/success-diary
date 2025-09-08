@@ -353,7 +353,47 @@
         </main>
     </div>
 
-    
+    <!-- 네로봇 전용 대화창 (인앱) -->
+    <div id="neroBotApp" class="nero-bot-app" style="display: none;">
+        <div class="nero-bot-container">
+            <div class="nero-bot-header">
+                <h2><i class="fas fa-robot"></i> 네로봇과 대화하기</h2>
+                <p>개발 관련 질문이나 일지 작성 도움을 받아보세요</p>
+                <button class="back-to-hub-btn" id="backToHubFromBot">
+                    <i class="fas fa-arrow-left"></i> 허브로 돌아가기
+                </button>
+            </div>
+            <div class="nero-chat-container">
+                <div class="nero-chat-messages" id="neroChatMessages">
+                    <div class="bot-message">
+                        <div class="message-content">
+                            <i class="fas fa-robot"></i>
+                            안녕하세요! 저는 네로봇입니다. 개발 관련 질문이나 일지 작성을 도와드릴게요! 🚀
+                        </div>
+                    </div>
+                </div>
+                <div class="nero-chat-input-container">
+                    <input type="text" id="neroChatInput" placeholder="네로봇에게 질문해보세요..." class="nero-chat-input">
+                    <button id="neroSendMessageBtn" class="nero-chat-send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 전환용 로딩 오버레이 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-inner">
+            <div class="waves">
+                <div class="wave wave1"></div>
+                <div class="wave wave2"></div>
+                <div class="wave wave3"></div>
+            </div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    </div>
+
     
     <script src="script.js"></script>
 </body>
