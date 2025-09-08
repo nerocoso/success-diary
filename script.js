@@ -260,17 +260,21 @@ function addMessage(content, sender) {
 }
 
 // 네로봇 응답 처리
-function handleNeroBotResponse(userMessage) {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('개발일지') || lowerMessage.includes('일지')) {
-        generateDevLog(userMessage);
-    } else if (lowerMessage.includes('github') || lowerMessage.includes('커밋')) {
-        addMessage('GitHub 연동 기능은 현재 개발 중입니다! 곧 사용할 수 있을 예정이에요 🚀', 'bot');
-    } else if (lowerMessage.includes('안녕') || lowerMessage.includes('hello')) {
-        addMessage('안녕하세요! 저는 네로봇입니다. 개발일지를 자동으로 작성해드릴게요! 어떤 도움이 필요하신가요?', 'bot');
-    } else {
-        addMessage('죄송해요, 아직 그 기능은 준비 중이에요. "개발일지 요약해줘" 같은 명령어를 시도해보세요!', 'bot');
+async function handleNeroBotResponse(userMessage) {
+    addMessage('네로봇이 생각 중...', 'bot');
+    try {
+        const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputs: userMessage })
+        });
+        const data = await response.json();
+        // 기존 '생각 중...' 메시지 삭제
+        const botMsgs = document.querySelectorAll('.bot-message');
+        if (botMsgs.length > 0) botMsgs[botMsgs.length-1].remove();
+        addMessage(data.generated_text || '죄송해요, 답변을 생성하지 못했어요.', 'bot');
+    } catch (e) {
+        addMessage('네로봇 서버와 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.', 'bot');
     }
 }
 
