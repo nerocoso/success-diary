@@ -62,7 +62,24 @@ const sendMessageBtn = document.getElementById('sendMessageBtn');
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
+    startLoginCloudAnimation();
 });
+
+function startLoginCloudAnimation() {
+    const loginForm = document.querySelector('.login-form');
+    if (!loginForm) return;
+    let start = null;
+    function animateCloud(ts) {
+        if (!start) start = ts;
+        const elapsed = (ts - start) / 1000; // 초 단위
+        // 사인파 기반 자연스러운 곡선 이동
+        const y = Math.sin(elapsed * 0.7) * 18; // 위아래
+        const x = Math.cos(elapsed * 0.5) * 10; // 좌우
+        loginForm.style.transform = `translateY(${y}px) translateX(${x}px)`;
+        requestAnimationFrame(animateCloud);
+    }
+    requestAnimationFrame(animateCloud);
+}
 
 function checkLoginStatus() {
     if (isLoggedIn) {
@@ -82,6 +99,14 @@ function showLoginScreen() {
 function showMainApp() {
     loginScreen.style.display = 'none';
     mainApp.style.display = 'block';
+    stopSoundCloudBGM();
+}
+
+function stopSoundCloudBGM() {
+    const scIframe = document.getElementById('sc-bgm');
+    if (!scIframe) return;
+    // SoundCloud Widget API: postMessage로 일시정지 명령
+    scIframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
 }
 
 function setupLoginEventListeners() {
