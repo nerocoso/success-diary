@@ -63,6 +63,24 @@ const sendMessageBtn = document.getElementById('sendMessageBtn');
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
     startLoginCloudAnimation();
+    // 허브 카드 클릭 이벤트
+    const goDiaryCard = document.getElementById('goDiaryCard');
+    const goProjectCard = document.getElementById('goProjectCard');
+    const hubScreen = document.getElementById('hubScreen');
+    const mainApp = document.getElementById('mainApp');
+    const projectApp = document.getElementById('projectApp');
+    if (goDiaryCard && goProjectCard) {
+        goDiaryCard.onclick = function() {
+            hubScreen.style.display = 'none';
+            mainApp.style.display = 'block';
+            projectApp.style.display = 'none';
+        };
+        goProjectCard.onclick = function() {
+            hubScreen.style.display = 'none';
+            mainApp.style.display = 'none';
+            projectApp.style.display = 'flex';
+        };
+    }
 });
 
 function startLoginCloudAnimation() {
@@ -98,7 +116,9 @@ function showLoginScreen() {
 
 function showMainApp() {
     loginScreen.style.display = 'none';
-    mainApp.style.display = 'block';
+    hubScreen.style.display = 'flex';
+    mainApp.style.display = 'none';
+    projectApp.style.display = 'none';
 }
 
 function setupLoginEventListeners() {
