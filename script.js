@@ -572,6 +572,52 @@ async function fetchCommitDetailNoAuth({ username, repo, sha }) {
     return resp.json();
 }
 
+// 네로봇 인텐트: GitHub 요약 요청인지 판별
+function isGithubSummaryIntent(lowerMsg) {
+    const kws = [
+        'github', '깃허브', '요약', '활동', '변경사항', '변경 사항', '코딩일지', '개발일지', '자동 작성', '오늘 요약'
+    ];
+    // 최소 2개 이상의 관련 단어가 포함되면 의도로 인정
+    let hit = 0;
+    for (const k of kws) if (lowerMsg.includes(k)) hit++;
+    return hit >= 2;
+}
+
+// 파일 단위 변경을 간단 규칙으로 자연어 요약
+function analyzeFileChange(f) {
+    if (!f) return '';
+    const { filename = '', status = '', additions = 0, deletions = 0, patch = '' } = f;
+    const ext = (filename.split('.').pop() || '').toLowerCase();
+    const scope = filename.includes('script') || ext === 'js' ? 'JS'
+                : (ext === 'html' ? 'HTML'
+                : (ext === 'css' ? 'CSS'
+                : ext.toUpperCase() || '파일'));
+
+    const acts = [];
+    if (status === 'added') acts.push('신규 추가');
+    else if (status === 'removed') acts.push('삭제');
+    else if (status === 'modified') acts.push('수정');
+
+    // patch 키워드 기반 힌트
+    const p = String(patch || '');
+    const addOnly = additions > 0 && deletions === 0;
+    const delOnly = deletions > 0 && additions === 0;
+
+    const hints = [];
+    if (/function\s+|=>|class\s+/i.test(p)) hints.push('함수/클래스 로직 변경');
+    if (/addEventListener|onclick|onchange|keyup|keydown/i.test(p)) hints.push('이벤트 처리 추가/수정');
+    if (/(fetch\(|axios\.|XMLHttpRequest)/i.test(p)) hints.push('네트워크 호출 추가/수정');
+    if (/<(div|button|input|section|nav|header|footer|span|i)(\s|>)/i.test(p)) hints.push('UI 마크업 변경');
+    if (/(color|background|border|margin|padding|flex|grid|font)/i.test(p)) hints.push('스타일 조정');
+    if (/localStorage|sessionStorage|JSON\.parse|JSON\.stringify/i.test(p)) hints.push('저장/상태 로직');
+
+    if (addOnly) hints.push('코드 추가 중심');
+    if (delOnly) hints.push('불필요 코드 정리');
+
+    const head = `- ${scope}: ${filename} (${acts.join('/') || '변경'}) +${additions}/-${deletions}`;
+    return hints.length ? `${head} — ${hints.join(', ')}` : head;
+}
+
 async function buildTodayGithubSummary({ username, repo }) {
     const { since, until, m, d } = getTodayRangeISO();
     const commits = await fetchCommitsNoAuth({ username, repo, since, until });
@@ -586,20 +632,33 @@ async function buildTodayGithubSummary({ username, repo }) {
             details.push(det);
         } catch {}
     }
+    // 파일 타입 통계
     const byExt = {};
+    // 자연어 요약 수집
+    const nlSummaries = [];
     for (const det of details) {
         const files = det.files || [];
+        const msg = (det.commit && det.commit.message || '').split('\n')[0];
+        const commitId = det.sha ? det.sha.slice(0,7) : '';
+        const fileBullets = [];
         for (const f of files) {
             const ext = (f.filename.split('.').pop() || '').toLowerCase();
             byExt[ext] = (byExt[ext] || 0) + 1;
+            fileBullets.push(analyzeFileChange(f));
+        }
+        if (fileBullets.length) {
+            nlSummaries.push(`- ${msg} (${commitId})\n  ${fileBullets.filter(Boolean).slice(0,6).join('\n  ')}`);
+        } else {
+            nlSummaries.push(`- ${msg} (${commitId})`);
         }
     }
     const extLines = Object.entries(byExt).sort((a,b)=>b[1]-a[1]).map(([e,c])=>`- ${e || '파일'}: ${c}개`).join('\n');
-    const commitLines = commits.slice(0, 10).map(c=>{
-        const msg = (c.commit && c.commit.message || '').split('\n')[0];
-        return `- ${msg} (${c.sha.slice(0,7)})`;
-    }).join('\n');
-    return `# ${m}월 ${d}일 코딩일지\n\n## 오늘의 작업 요약\n- 저장소: ${username}/${repo}\n- 커밋 수: ${commits.length}개\n\n## 대표 변경 파일 타입\n${extLines || '- (상세 파일 정보 부족)'}\n\n## 커밋 메시지\n${commitLines}\n\n## 내일 할 일 제안\n- 미완료 이슈/리팩토링 포인트 정리\n- 테스트/문서 보강`;
+    const header = `# ${m}월 ${d}일 코딩일지`;
+    const overview = `## 오늘의 작업 요약\n- 저장소: ${username}/${repo}\n- 커밋 수: ${commits.length}개`;
+    const fileType = `## 대표 변경 파일 타입\n${extLines || '- (상세 파일 정보 부족)'}`;
+    const natural = `## 변경 사항(자연어 요약)\n${nlSummaries.join('\n')}`;
+    const next = `## 내일 할 일 제안\n- 남은 리팩터링/주석 보강\n- 테스트/문서 업데이트`; 
+    return [header, overview, fileType, natural, next].join('\n\n');
 }
 
 function autoFillDiaryWithMarkdown(md) {
@@ -744,6 +803,30 @@ async function handleNeroBotResponseForPage(userMessage) {
 
 // 네로봇 응답 처리 (일지 탭, 공용 fetch 사용)
 async function handleNeroBotResponse(userMessage) {
+    const lower = (userMessage || '').toLowerCase();
+    // 1) GitHub 요약 의도 감지 시: 로컬 요약 실행 + 일지 자동 채움
+    if (isGithubSummaryIntent(lower)) {
+        addMessage('깃허브에서 오늘 활동을 가져와 요약 중입니다...', 'bot');
+        try {
+            const md = await buildTodayGithubSummary({ username: 'nerocoso', repo: 'success-diary' });
+            // thinking 메시지 제거
+            const botMsgs = document.querySelectorAll('.bot-message');
+            if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
+            // 일지 폼 자동 채움
+            autoFillDiaryWithMarkdown(md);
+            // 챗 응답은 간단 안내로
+            addMessage('오늘 GitHub 변경사항을 요약해 코딩일지 폼에 채웠습니다. 저장 전에 검토해 주세요!', 'bot');
+            pushNeroHistory('bot', '[자동] GitHub 오늘 요약을 코딩일지에 채움');
+        } catch (e) {
+            const botMsgs = document.querySelectorAll('.bot-message');
+            if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
+            addMessage('GitHub 요약 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'bot');
+            pushNeroHistory('bot', 'GitHub 요약 중 오류 발생');
+        }
+        return;
+    }
+
+    // 2) 일반 대화는 기존 로컬/프록시 처리
     addMessage('네로봇이 생각 중...', 'bot');
     try {
         const text = await fetchNeroResponse(userMessage);
