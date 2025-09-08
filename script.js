@@ -540,6 +540,75 @@ function setupEventListeners() {
     setupNeroBot();
 }
 
+// --- GitHub 비로그인 요약 유틸들 ---
+// 오늘 날짜 범위(KST) since/until ISO
+function getTodayRangeISO() {
+    const now = new Date();
+    const tz = now.getTimezoneOffset(); // 분
+    const kstOffsetMin = -9 * 60; // UTC+9
+    const diffMin = kstOffsetMin - tz;
+    const kstNow = new Date(now.getTime() + diffMin * 60 * 1000);
+    const y = kstNow.getFullYear();
+    const m = kstNow.getMonth();
+    const d = kstNow.getDate();
+    const start = new Date(Date.UTC(y, m, d, 0, 0, 0));
+    const end = new Date(Date.UTC(y, m, d, 23, 59, 59));
+    return { since: start.toISOString(), until: end.toISOString(), y, m: m + 1, d };
+}
+
+async function fetchCommitsNoAuth({ username, repo, since, until }) {
+    const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/commits?since=${encodeURIComponent(since)}&until=${encodeURIComponent(until)}`;
+    const resp = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+    if (!resp.ok) throw new Error(`GitHub API 오류: ${resp.status}`);
+    return resp.json();
+}
+
+async function fetchCommitDetailNoAuth({ username, repo, sha }) {
+    const url = `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/commits/${encodeURIComponent(sha)}`;
+    const resp = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+    if (!resp.ok) throw new Error(`GitHub Commit API 오류: ${resp.status}`);
+    return resp.json();
+}
+
+async function buildTodayGithubSummary({ username, repo }) {
+    const { since, until, m, d } = getTodayRangeISO();
+    const commits = await fetchCommitsNoAuth({ username, repo, since, until });
+    if (!Array.isArray(commits) || commits.length === 0) {
+        return `# ${m}월 ${d}일 코딩일지\n\n오늘은 해당 저장소에 커밋이 없었습니다.\n\n- 저장소: ${username}/${repo}`;
+    }
+    const top = commits.slice(0, 5);
+    const details = [];
+    for (const c of top) {
+        try {
+            const det = await fetchCommitDetailNoAuth({ username, repo, sha: c.sha });
+            details.push(det);
+        } catch {}
+    }
+    const byExt = {};
+    for (const det of details) {
+        const files = det.files || [];
+        for (const f of files) {
+            const ext = (f.filename.split('.').pop() || '').toLowerCase();
+            byExt[ext] = (byExt[ext] || 0) + 1;
+        }
+    }
+    const extLines = Object.entries(byExt).sort((a,b)=>b[1]-a[1]).map(([e,c])=>`- ${e || '파일'}: ${c}개`).join('\n');
+    const commitLines = commits.slice(0, 10).map(c=>{
+        const msg = (c.commit && c.commit.message || '').split('\n')[0];
+        return `- ${msg} (${c.sha.slice(0,7)})`;
+    }).join('\n');
+    return `# ${m}월 ${d}일 코딩일지\n\n## 오늘의 작업 요약\n- 저장소: ${username}/${repo}\n- 커밋 수: ${commits.length}개\n\n## 대표 변경 파일 타입\n${extLines || '- (상세 파일 정보 부족)'}\n\n## 커밋 메시지\n${commitLines}\n\n## 내일 할 일 제안\n- 미완료 이슈/리팩토링 포인트 정리\n- 테스트/문서 보강`;
+}
+
+function autoFillDiaryWithMarkdown(md) {
+    const titleEl = document.getElementById('diaryTitle');
+    const contentEl = document.getElementById('diaryContent');
+    const dateEl = document.getElementById('diaryDate');
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+    if (titleEl) titleEl.value = `${new Date().toLocaleDateString('ko-KR')} 코딩일지`;
+    if (contentEl) contentEl.value = md;
+}
+
 // 네로봇 설정
 function setupNeroBot() {
     // 메시지 전송 버튼 이벤트
