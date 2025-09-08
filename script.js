@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function() {
         goNeroBotCard.addEventListener('click', function() {
             if (hubScreenEl) hubScreenEl.style.display = 'none';
             if (mainApp) mainApp.style.display = 'none';
-            if (neroBotAppEl) neroBotAppEl.style.display = 'block';
+            if (neroBotAppEl) neroBotAppEl.style.display = 'flex';
         });
     }
 
