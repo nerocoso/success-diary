@@ -63,6 +63,7 @@ const sendMessageBtn = document.getElementById('sendMessageBtn');
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
     startLoginCloudAnimation();
+    setupCustomMiniPlayer();
 });
 
 function startLoginCloudAnimation() {
@@ -1082,4 +1083,28 @@ function hexToRgb(hex) {
     return result ? 
         `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
         '255, 107, 157';
+}
+
+function setupCustomMiniPlayer() {
+    const playBtn = document.getElementById('cmp-playpause');
+    const playIcon = document.getElementById('cmp-play-icon');
+    const pauseIcon = document.getElementById('cmp-pause-icon');
+    let isPlaying = true;
+    playBtn.addEventListener('click', function() {
+        const scIframe = document.getElementById('sc-bgm');
+        if (!scIframe) return;
+        if (isPlaying) {
+            scIframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
+            playIcon.style.display = '';
+            pauseIcon.style.display = 'none';
+        } else {
+            scIframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = '';
+        }
+        isPlaying = !isPlaying;
+    });
+    // 초기 상태: 재생 중이므로 pause 아이콘 표시
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = '';
 }
