@@ -44,9 +44,10 @@
       <input type="text" id="inp" placeholder="메시지를 입력하세요. 예) 최근 일지 요약 / 목표 현황 / 다음 할 일 추천" />
       <button id="send"><i class="fas fa-paper-plane"></i></button>
     </div>
-    <div class="tip">도움말: "학습: 키워드=커피, 응답=커피 좋죠!" 처럼 규칙을 가르칠 수 있어요.</div>
+    <div class="tip">도움말: "학습: 키워드=커피, 응답=커피 좋죠!" 처럼 규칙을 가르칠 수 있어요. 🔍 이제 웹 검색도 가능합니다!</div>
   </div>
 
+  <script src="search-engine.js"></script>
   <script>
     // --- Local assistant copied (lightweight) ---
     function getLocal(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
@@ -58,7 +59,7 @@
     function addCustomRule(pattern, response){ const r=getCustomRules(); r.push({pattern:String(pattern||'').slice(0,200), response:String(response||'').slice(0,2000)}); saveCustomRules(r); return r.length }
     function clearCustomRules(){ saveCustomRules([]) }
 
-    function generateLocalAssistantResponse(msg){
+    async function generateLocalAssistantResponse(msg){
       const diaries = getLocal('diaries', []);
       const goals = getLocal('goals', []);
       const text = (msg||'').trim();
@@ -67,6 +68,36 @@
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0];
       const rnd = (a)=>a[Math.floor(Math.random()*a.length)];
+
+      // 검색 의도 감지
+      const searchIntents = [
+        /^(.+)(이|가)\s*(뭐야|뭔가|무엇|무엇인가|어떤|어떻게)/,
+        /^(.+)(에\s*대해|에\s*관해|에\s*대한|에\s*관한)\s*(알려줘|설명해|말해줘|가르쳐줘)/,
+        /^(.+)(은|는)\s*(어떻게|왜|언제|어디서|누가)/,
+        /(검색해줘|찾아줘|알아봐줘|정보|설명)/,
+        /(어떻게\s*해|방법|how\s*to)/i,
+        /(무엇|뭐|what\s*is)/i,
+        /(왜|이유|why)/i
+      ];
+
+      const isSearchQuery = searchIntents.some(pattern => pattern.test(text)) || 
+                           (text.includes('?') || text.includes('？')) ||
+                           (text.length > 10 && !text.includes('일지') && !text.includes('목표'));
+
+      // 검색 의도가 감지되면 웹 검색 수행
+      if (isSearchQuery && window.neroSearchEngine) {
+        try {
+          const searchResult = await window.neroSearchEngine.search(text);
+          if (searchResult.success) {
+            return `🔍 **웹 검색 결과**\n\n${searchResult.summary}`;
+          } else {
+            return `검색을 시도했지만 결과를 찾을 수 없습니다: ${searchResult.message}\n\n로컬 기능으로 도와드릴까요?`;
+          }
+        } catch (error) {
+          console.error('검색 오류:', error);
+          // 검색 실패 시 기존 로컬 응답으로 fallback
+        }
+      }
 
       // teach commands
       const teachMatch = text.match(/^\s*(학습|teach)\s*:\s*(.+)$/i);
@@ -164,7 +195,7 @@
           return `프록시 통신 오류: ${e?.message||e}`;
         }
       }
-      return generateLocalAssistantResponse(userMessage);
+      return await generateLocalAssistantResponse(userMessage);
     }
 
     // --- UI ---

@@ -163,11 +163,11 @@ async function fetchNeroResponse(userMessage) {
     }
 
     // provider === 'local' : 규칙 기반 응답 생성
-    return generateLocalAssistantResponse(userMessage);
+    return await generateLocalAssistantResponse(userMessage);
 }
 
 // 규칙 기반(로컬) 어시스턴트: 네트워크/키 없이 동작, 기존 데이터(diaries/goals)를 활용
-function generateLocalAssistantResponse(userMessage) {
+async function generateLocalAssistantResponse(userMessage) {
     const msg = (userMessage || '').trim();
     if (!msg) return '무엇을 도와드릴까요? 예: "오늘 일지 요약", "이번 주 목표 정리", "다음 할 일 추천"';
 
@@ -178,6 +178,36 @@ function generateLocalAssistantResponse(userMessage) {
 
     // 랜덤 선택 유틸
     const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    // 검색 의도 감지 - 질문형 패턴이나 정보 요청 키워드 확인
+    const searchIntents = [
+        /^(.+)(이|가)\s*(뭐야|뭔가|무엇|무엇인가|어떤|어떻게)/,
+        /^(.+)(에\s*대해|에\s*관해|에\s*대한|에\s*관한)\s*(알려줘|설명해|말해줘|가르쳐줘)/,
+        /^(.+)(은|는)\s*(어떻게|왜|언제|어디서|누가)/,
+        /(검색해줘|찾아줘|알아봐줘|정보|설명)/,
+        /(어떻게\s*해|방법|how\s*to)/i,
+        /(무엇|뭐|what\s*is)/i,
+        /(왜|이유|why)/i
+    ];
+
+    const isSearchQuery = searchIntents.some(pattern => pattern.test(msg)) || 
+                         (msg.includes('?') || msg.includes('？')) ||
+                         (msg.length > 10 && !msg.includes('일지') && !msg.includes('목표'));
+
+    // 검색 의도가 감지되면 웹 검색 수행
+    if (isSearchQuery && window.neroSearchEngine) {
+        try {
+            const searchResult = await window.neroSearchEngine.search(msg);
+            if (searchResult.success) {
+                return `🔍 **웹 검색 결과**\n\n${searchResult.summary}`;
+            } else {
+                return `검색을 시도했지만 결과를 찾을 수 없습니다: ${searchResult.message}\n\n로컬 기능으로 도와드릴까요?`;
+            }
+        } catch (error) {
+            console.error('검색 오류:', error);
+            // 검색 실패 시 기존 로컬 응답으로 fallback
+        }
+    }
 
     // 최근 히스토리(경량)
     const hist = getNeroHistory();
