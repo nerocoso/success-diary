@@ -13,6 +13,9 @@ let isLoggedIn = false; // 항상 로그인 화면부터 시작
 const navBtns = document.querySelectorAll('.nav-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
+// 뉴런 배경 관련
+let neuronBg = null; // NeuronBackground 인스턴스
+
 // 일지 관련 요소들
 const addDiaryBtn = document.getElementById('addDiaryBtn');
 const diaryForm = document.getElementById('diaryForm');
@@ -83,6 +86,183 @@ function transitionTo(target) {
         if (hubScreenEl) hubScreenEl.style.display = 'none';
         if (mainApp) mainApp.style.display = 'none';
         if (neroBotAppEl) neroBotAppEl.style.display = 'flex';
+    }
+}
+
+// ==========================
+// 뉴런 배경 캔버스 애니메이션
+// ==========================
+class NeuronBackground {
+    constructor(canvas, opts = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.color = opts.color || '#00eaff';
+        this.particleCountBase = 90; // 화면 크기에 따라 가변
+        this.maxLinkDist = 130;
+        this.mouse = { x: 0, y: 0, active: false };
+        this.running = false;
+        this.particles = [];
+        this.rafId = null;
+        this._onResize = this.resize.bind(this);
+        this._onMouseMove = (e) => { this.mouse.active = true; this.mouse.x = e.clientX; this.mouse.y = e.clientY; };
+        this._onMouseLeave = () => { this.mouse.active = false; };
+        this.resize();
+        this.initParticles();
+    }
+
+    resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = this.canvas.clientWidth || window.innerWidth;
+        const h = this.canvas.clientHeight || window.innerHeight;
+        this.canvas.width = Math.floor(w * dpr);
+        this.canvas.height = Math.floor(h * dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // 파티클 수 재계산
+        const area = w * h;
+        const density = 0.00012; // 밀도
+        this.targetCount = Math.max(60, Math.min(220, Math.floor(area * density)));
+        if (this.particles.length === 0) return;
+        this.syncParticleCount();
+    }
+
+    initParticles() {
+        this.particles = [];
+        for (let i = 0; i < this.targetCount; i++) this.particles.push(this.newParticle());
+    }
+
+    syncParticleCount() {
+        const diff = this.targetCount - this.particles.length;
+        if (diff > 0) {
+            for (let i = 0; i < diff; i++) this.particles.push(this.newParticle());
+        } else if (diff < 0) {
+            this.particles.splice(diff); // remove extra
+        }
+    }
+
+    newParticle() {
+        const w = (this.canvas.clientWidth || window.innerWidth);
+        const h = (this.canvas.clientHeight || window.innerHeight);
+        const speed = 0.25 + Math.random() * 0.6;
+        return {
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * speed,
+            vy: (Math.random() - 0.5) * speed,
+            homeX: null,
+            homeY: null,
+            size: 1 + Math.random() * 1.8
+        };
+    }
+
+    start() {
+        if (this.running) return;
+        this.running = true;
+        window.addEventListener('resize', this._onResize);
+        window.addEventListener('mousemove', this._onMouseMove);
+        window.addEventListener('mouseleave', this._onMouseLeave);
+        this.loop();
+    }
+
+    stop() {
+        this.running = false;
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+        window.removeEventListener('resize', this._onResize);
+        window.removeEventListener('mousemove', this._onMouseMove);
+        window.removeEventListener('mouseleave', this._onMouseLeave);
+        // 캔버스 지우기
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    loop() {
+        if (!this.running) return;
+        this.update();
+        this.draw();
+        this.rafId = requestAnimationFrame(() => this.loop());
+    }
+
+    update() {
+        const w = this.canvas.clientWidth || window.innerWidth;
+        const h = this.canvas.clientHeight || window.innerHeight;
+        const repelRadius = 110; // 마우스 반발 반경
+        const repelForce = 0.65; // 반발 계수
+        const returnForce = 0.02; // 원위치 복원 계수
+
+        for (const p of this.particles) {
+            // 마우스 반발
+            if (this.mouse.active) {
+                const dx = p.x - this.mouse.x;
+                const dy = p.y - this.mouse.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < repelRadius && dist > 0.001) {
+                    const f = (repelRadius - dist) / repelRadius;
+                    p.vx += (dx / dist) * f * repelForce;
+                    p.vy += (dy / dist) * f * repelForce;
+                    // home 좌표 기억 (스프링 복귀용)
+                    if (p.homeX == null) { p.homeX = p.x; p.homeY = p.y; }
+                }
+            } else if (p.homeX != null) {
+                // 스프링처럼 서서히 원래 자리로 복귀
+                p.vx += (p.homeX - p.x) * returnForce;
+                p.vy += (p.homeY - p.y) * returnForce;
+                // 거의 원위치면 anchor 해제
+                if (Math.abs(p.x - p.homeX) < 0.5 && Math.abs(p.y - p.homeY) < 0.5) {
+                    p.homeX = p.homeY = null;
+                }
+            }
+
+            // 속도 감쇠로 안정화
+            p.vx *= 0.98;
+            p.vy *= 0.98;
+
+            // 위치 업데이트
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // 화면 가장자리에서 부드럽게 반사
+            if (p.x <= 0 || p.x >= w) p.vx *= -1, p.x = Math.max(0, Math.min(w, p.x));
+            if (p.y <= 0 || p.y >= h) p.vy *= -1, p.y = Math.max(0, Math.min(h, p.y));
+        }
+    }
+
+    draw() {
+        const ctx = this.ctx;
+        const w = this.canvas.clientWidth || window.innerWidth;
+        const h = this.canvas.clientHeight || window.innerHeight;
+        ctx.clearRect(0, 0, w, h);
+
+        // 연결선
+        ctx.lineWidth = 1;
+        for (let i = 0; i < this.particles.length; i++) {
+            for (let j = i + 1; j < this.particles.length; j++) {
+                const a = this.particles[i];
+                const b = this.particles[j];
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < this.maxLinkDist) {
+                    const alpha = 1 - dist / this.maxLinkDist;
+                    ctx.strokeStyle = `rgba(0, 230, 255, ${alpha * 0.6})`;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = 'rgba(0, 220, 255, 0.6)';
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // 노드(점)
+        for (const p of this.particles) {
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = 'rgba(0, 255, 255, 0.85)';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 
@@ -390,6 +570,12 @@ async function generateLocalAssistantResponse(userMessage) {
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
     startLoginCloudAnimation();
+    // 로그인 배경 뉴런 애니메이션 시작 (로그인 화면에서만 활성)
+    const canvas = document.getElementById('neuronCanvas');
+    if (canvas) {
+        neuronBg = new NeuronBackground(canvas, { color: '#00e6ff' });
+        neuronBg.start();
+    }
     // 업데이트 배지 표시
     showUpdateBadgeIfAny();
     // 네로봇 입력창 예시 날짜를 오늘 날짜로 업데이트
@@ -436,12 +622,20 @@ function checkLoginStatus() {
 function showLoginScreen() {
     loginScreen.style.display = 'flex';
     mainApp.style.display = 'none';
+    // 로그인 화면 진입 시 배경 애니메이션 재개
+    const canvas = document.getElementById('neuronCanvas');
+    if (canvas) {
+        if (!neuronBg) neuronBg = new NeuronBackground(canvas, { color: '#00e6ff' });
+        neuronBg.start();
+    }
 }
 
 function showMainApp() {
     loginScreen.style.display = 'none';
     if (hubScreenEl) hubScreenEl.style.display = 'flex';
     if (mainApp) mainApp.style.display = 'none';
+    // 로그인 종료 후 애니메이션 중지
+    if (neuronBg) neuronBg.stop();
 }
 
 function setupLoginEventListeners() {
