@@ -97,11 +97,19 @@ class NeuronBackground {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.color = opts.color || '#00eaff';
-        this.particleCountBase = 90; // 화면 크기에 따라 가변
-        this.maxLinkDist = 130;
+        // 3D 필드/투영 파라미터
+        this.depth = 700;
+        this.fov = 520; // 원근 투영
+        this.angleY = 0;
+        this.angleZ = 0;
+        this.rotVelY = 0.0032; // 회전 속도
+        this.rotVelZ = -0.0018;
+
+        this.maxLinkDist = 190; // 스크린 기준 연결 거리 (밀도 높임)
         this.mouse = { x: 0, y: 0, active: false };
         this.running = false;
         this.particles = [];
+        this.proj = []; // 투영된 좌표 캐시
         this.rafId = null;
         this._onResize = this.resize.bind(this);
         this._onMouseMove = (e) => { this.mouse.active = true; this.mouse.x = e.clientX; this.mouse.y = e.clientY; };
@@ -119,8 +127,9 @@ class NeuronBackground {
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         // 파티클 수 재계산
         const area = w * h;
-        const density = 0.00012; // 밀도
-        this.targetCount = Math.max(60, Math.min(220, Math.floor(area * density)));
+        // 더 조밀한 라인 연출을 위해 밀도/상한 상향 (성능을 위해 상한 제한)
+        const density = 0.00020;
+        this.targetCount = Math.max(120, Math.min(320, Math.floor(area * density)));
         if (this.particles.length === 0) return;
         this.syncParticleCount();
     }
@@ -142,15 +151,19 @@ class NeuronBackground {
     newParticle() {
         const w = (this.canvas.clientWidth || window.innerWidth);
         const h = (this.canvas.clientHeight || window.innerHeight);
-        const speed = 0.25 + Math.random() * 0.6;
+        const speed = 0.12 + Math.random() * 0.3; // 기본 드리프트 속도는 낮게
         return {
-            x: Math.random() * w,
-            y: Math.random() * h,
+            // 3D 월드 좌표 (캔버스 중심 기준이 편하므로 초기 분포는 화면 사이즈로 설정)
+            x: (Math.random() - 0.5) * w,
+            y: (Math.random() - 0.5) * h,
+            z: (Math.random() * 2 - 1) * this.depth,
             vx: (Math.random() - 0.5) * speed,
             vy: (Math.random() - 0.5) * speed,
+            vz: (Math.random() - 0.5) * speed * 0.5,
+            jitter: Math.random() * Math.PI * 2, // 유기적 진동
             homeX: null,
             homeY: null,
-            size: 1 + Math.random() * 1.8
+            size: 0.6 + Math.random() * 1.6
         };
     }
 
@@ -185,44 +198,63 @@ class NeuronBackground {
     update() {
         const w = this.canvas.clientWidth || window.innerWidth;
         const h = this.canvas.clientHeight || window.innerHeight;
-        const repelRadius = 110; // 마우스 반발 반경
-        const repelForce = 0.65; // 반발 계수
-        const returnForce = 0.02; // 원위치 복원 계수
+        const cx = w / 2, cy = h / 2;
 
+        // 회전 진행
+        this.angleY += this.rotVelY;
+        this.angleZ += this.rotVelZ;
+
+        const repelRadius = 120; // 마우스 반발 반경 (스크린 좌표 기준)
+        const repelForce = 0.9;  // 강한 확산
+        const returnForce = 0.015; // 서서히 복귀
+
+        // 유기적 드리프트와 반발 적용 (월드 좌표)
+        const time = performance.now() * 0.0015;
         for (const p of this.particles) {
-            // 마우스 반발
+            // 마우스 반발: 투영 좌표 계산해 근접 시 월드 속도 가중
+            const rotY = this.rotateY(p.x, p.y, p.z, this.angleY);
+            const rotZ = this.rotateZ(rotY.x, rotY.y, rotY.z, this.angleZ);
+            const sc = this.fov / (this.fov + rotZ.z);
+            const sx = cx + rotZ.x * sc;
+            const sy = cy + rotZ.y * sc;
+
             if (this.mouse.active) {
-                const dx = p.x - this.mouse.x;
-                const dy = p.y - this.mouse.y;
+                const dx = sx - this.mouse.x;
+                const dy = sy - this.mouse.y;
                 const dist = Math.hypot(dx, dy);
                 if (dist < repelRadius && dist > 0.001) {
                     const f = (repelRadius - dist) / repelRadius;
-                    p.vx += (dx / dist) * f * repelForce;
-                    p.vy += (dy / dist) * f * repelForce;
-                    // home 좌표 기억 (스프링 복귀용)
+                    // 화면에서 멀어질수록 효과 조금 약화
+                    const depthAttn = Math.max(0.5, sc);
+                    p.vx += (dx / dist) * f * repelForce * depthAttn;
+                    p.vy += (dy / dist) * f * repelForce * depthAttn;
                     if (p.homeX == null) { p.homeX = p.x; p.homeY = p.y; }
                 }
             } else if (p.homeX != null) {
-                // 스프링처럼 서서히 원래 자리로 복귀
                 p.vx += (p.homeX - p.x) * returnForce;
                 p.vy += (p.homeY - p.y) * returnForce;
-                // 거의 원위치면 anchor 해제
-                if (Math.abs(p.x - p.homeX) < 0.5 && Math.abs(p.y - p.homeY) < 0.5) {
+                if (Math.abs(p.x - p.homeX) < 0.6 && Math.abs(p.y - p.homeY) < 0.6) {
                     p.homeX = p.homeY = null;
                 }
             }
 
-            // 속도 감쇠로 안정화
-            p.vx *= 0.98;
-            p.vy *= 0.98;
+            // 유기적인 미세 진동(스스로 도는 느낌 강화)
+            p.jitter += 0.015 + Math.random() * 0.01;
+            p.vx += Math.cos(p.jitter + time) * 0.02;
+            p.vy += Math.sin(p.jitter + time * 0.7) * 0.02;
+            p.vz += Math.cos(p.jitter * 0.6 + time * 0.5) * 0.015;
 
-            // 위치 업데이트
+            // 감쇠 및 위치 업데이트
+            p.vx *= 0.984;
+            p.vy *= 0.984;
+            p.vz *= 0.988;
             p.x += p.vx;
             p.y += p.vy;
+            p.z += p.vz;
 
-            // 화면 가장자리에서 부드럽게 반사
-            if (p.x <= 0 || p.x >= w) p.vx *= -1, p.x = Math.max(0, Math.min(w, p.x));
-            if (p.y <= 0 || p.y >= h) p.vy *= -1, p.y = Math.max(0, Math.min(h, p.y));
+            // 깊이 경계에서 되돌림(부드럽게)
+            if (p.z < -this.depth) { p.z = -this.depth; p.vz *= -0.6; }
+            if (p.z >  this.depth) { p.z =  this.depth; p.vz *= -0.6; }
         }
     }
 
@@ -230,39 +262,76 @@ class NeuronBackground {
         const ctx = this.ctx;
         const w = this.canvas.clientWidth || window.innerWidth;
         const h = this.canvas.clientHeight || window.innerHeight;
+        const cx = w / 2, cy = h / 2;
         ctx.clearRect(0, 0, w, h);
 
-        // 연결선
+        // 3D -> 2D 투영 좌표 캐시 계산
+        this.proj.length = this.particles.length;
+        const cosY = Math.cos(this.angleY), sinY = Math.sin(this.angleY);
+        const cosZ = Math.cos(this.angleZ), sinZ = Math.sin(this.angleZ);
+        for (let i = 0; i < this.particles.length; i++) {
+            const p = this.particles[i];
+            // 회전 Y
+            let rx = p.x * cosY - p.z * sinY;
+            let rz = p.x * sinY + p.z * cosY;
+            // 회전 Z
+            const r2x = rx * cosZ - p.y * sinZ;
+            const r2y = rx * sinZ + p.y * cosZ;
+            const r2z = rz;
+            const sc = this.fov / (this.fov + r2z);
+            const sx = cx + r2x * sc;
+            const sy = cy + r2y * sc;
+            this.proj[i] = { x: sx, y: sy, z: r2z, s: sc };
+        }
+
+        // 연결선: 가까운 이웃 우선으로 더 조밀한 라인 생성
         ctx.lineWidth = 1;
         for (let i = 0; i < this.particles.length; i++) {
+            const ai = this.proj[i];
+            // 깊이가 너무 멀면 건너뛰기(노이즈 감소)
+            if (!ai) continue;
             for (let j = i + 1; j < this.particles.length; j++) {
-                const a = this.particles[i];
-                const b = this.particles[j];
-                const dx = a.x - b.x;
-                const dy = a.y - b.y;
-                const dist = Math.hypot(dx, dy);
-                if (dist < this.maxLinkDist) {
-                    const alpha = 1 - dist / this.maxLinkDist;
-                    ctx.strokeStyle = `rgba(0, 230, 255, ${alpha * 0.6})`;
-                    ctx.shadowBlur = 8;
-                    ctx.shadowColor = 'rgba(0, 220, 255, 0.6)';
+                const bj = this.proj[j];
+                if (!bj) continue;
+                const dx = ai.x - bj.x;
+                const dy = ai.y - bj.y;
+                const sd = Math.hypot(dx, dy);
+                if (sd < this.maxLinkDist) {
+                    const depthBlend = Math.max(0.35, (ai.s + bj.s) * 0.5);
+                    const alpha = (1 - sd / this.maxLinkDist) * 0.75 * depthBlend;
+                    ctx.strokeStyle = `rgba(0, 230, 255, ${alpha})`;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = 'rgba(0, 220, 255, 0.8)';
                     ctx.beginPath();
-                    ctx.moveTo(a.x, a.y);
-                    ctx.lineTo(b.x, b.y);
+                    ctx.moveTo(ai.x, ai.y);
+                    ctx.lineTo(bj.x, bj.y);
                     ctx.stroke();
                 }
             }
         }
 
-        // 노드(점)
-        for (const p of this.particles) {
+        // 노드(점): 가까울수록 크게/밝게
+        for (let i = 0; i < this.particles.length; i++) {
+            const p2 = this.proj[i];
+            const p = this.particles[i];
+            const r = Math.max(0.6, p.size * p2.s * 1.2);
             ctx.fillStyle = this.color;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = 'rgba(0, 255, 255, 0.85)';
+            ctx.shadowBlur = 16 * p2.s;
+            ctx.shadowColor = 'rgba(0, 255, 255, 0.95)';
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.arc(p2.x, p2.y, r, 0, Math.PI * 2);
             ctx.fill();
         }
+    }
+
+    // 회전 헬퍼 (미세 계산용 – 현재 draw에서 직접 최적화해서 사용)
+    rotateY(x, y, z, a) {
+        const ca = Math.cos(a), sa = Math.sin(a);
+        return { x: x * ca - z * sa, y, z: x * sa + z * ca };
+    }
+    rotateZ(x, y, z, a) {
+        const ca = Math.cos(a), sa = Math.sin(a);
+        return { x: x * ca - y * sa, y: x * sa + y * ca, z };
     }
 }
 
