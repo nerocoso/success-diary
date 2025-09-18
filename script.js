@@ -652,9 +652,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // 허브 카드 클릭 이벤트 (전역 참조 사용)
     const goDiaryCard = document.getElementById('goDiaryCard');
     const goNeroBotCard = document.getElementById('goNeroBotCard');
+    const goMW3DCard = document.getElementById('goMW3DCard');
     if (goDiaryCard) {
         goDiaryCard.addEventListener('click', function() {
             transitionTo('main');
+        });
+    }
+    if (goMW3DCard) {
+        goMW3DCard.addEventListener('click', function() {
+            // 새 창으로 MW3D 데모 열기
+            window.open('mw3d.html', '_blank');
         });
     }
     // 네로봇 카드 제거됨 (존재할 경우 무시)

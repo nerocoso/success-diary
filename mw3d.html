@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi‑Window 3D Hologram</title>
+  <style>
+    html, body { height:100%; margin:0; background:#020202; overflow:hidden; }
+    canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+    .hint { position:fixed; left:12px; bottom:10px; color:#8aa; font:12px/1.4 system-ui, sans-serif; opacity:.7; }
+  </style>
+</head>
+<body>
+  <canvas id="glow"></canvas>
+  <div class="hint">창을 여러 개 열어 서로 다른 홀로그램을 움직여보세요. 마우스로 끌듯이 회전합니다.</div>
+  <script src="mw3d.js"></script>
+</body>
+</html>
