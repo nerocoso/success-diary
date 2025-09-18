@@ -58,19 +58,38 @@
     return { sx: W/2 + x2 * R * scale, sy: H/2 + y2 * R * scale, s: scale, z: z1 };
   }
 
-  // Multi-window sync
+  // Multi-window sync (BroadcastChannel with localStorage fallback)
   const id = Math.random().toString(36).slice(2);
-  const channel = new BroadcastChannel('mw3d-demo');
   const peers = new Map(); // id -> {x,y,hue,last}
-  function broadcast(){
-    channel.postMessage({ id, x: pointer.x/W, y: pointer.y/H, hue: hueSelf, t: performance.now() });
-  }
-  setInterval(broadcast, 60);
-  channel.onmessage = (ev) => {
-    const m = ev.data || {};
+  let useBC = false;
+  let channel = null;
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      channel = new BroadcastChannel('mw3d-demo');
+      useBC = true;
+    }
+  } catch {}
+
+  function receiveMsg(m){
     if (!m || m.id === id) return;
     peers.set(m.id, { x: m.x, y: m.y, hue: m.hue, last: performance.now() });
-  };
+  }
+
+  if (useBC) {
+    channel.onmessage = (ev)=> receiveMsg(ev.data || {});
+  } else {
+    window.addEventListener('storage', (e) => {
+      if (e.key !== 'mw3d-demo') return;
+      try { const data = JSON.parse(e.newValue || '{}'); receiveMsg(data); } catch{}
+    });
+  }
+
+  function broadcast(){
+    const payload = { id, x: pointer.x/Math.max(1,W), y: pointer.y/Math.max(1,H), hue: hueSelf, t: performance.now() };
+    if (useBC && channel) channel.postMessage(payload);
+    else try { localStorage.setItem('mw3d-demo', JSON.stringify(payload)); } catch{}
+  }
+  setInterval(broadcast, 80);
 
   function cleanupPeers(){
     const now = performance.now();
@@ -84,8 +103,9 @@
     const midx = x1 + dx * 0.5, midy = y1 + dy * 0.5;
     const nx = -dy, ny = dx;
     const curve = Math.min(160, 40 + dist * 0.18);
-    const cx1 = midx + nx * (curve/dist);
-    const cy1 = midy + ny * (curve/dist);
+    const safe = dist > 0.0001 ? (curve/dist) : 0;
+    const cx1 = midx + nx * safe;
+    const cy1 = midy + ny * safe;
 
     const grd = ctx.createLinearGradient(x1, y1, x2, y2);
     grd.addColorStop(0, `hsla(${hueSelf}, 90%, 60%, 0.9)`);
@@ -104,6 +124,8 @@
   }
 
   function frame(){
+    // tiny debug overlay (shows peer count)
+    ctx.save();
     cleanupPeers();
 
     // inertia & rotation target from pointer
@@ -142,6 +164,14 @@
 
     // filaments to peers
     for (const peer of peers.values()) drawFilamentToPeer(peer);
+
+    // debug text
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(200,220,255,.5)';
+    ctx.font = '12px system-ui';
+    ctx.fillText(`${useBC? 'BC':'LS'} peers:${peers.size}`, 10, 16);
+    ctx.restore();
 
     requestAnimationFrame(frame);
   }

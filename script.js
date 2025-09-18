@@ -111,6 +111,10 @@ class NeuronBackground {
         this.particles = [];
         this.proj = []; // 투영된 좌표 캐시
         this.rafId = null;
+        // 성능 제어
+        this.fpsEMA = 60;
+        this._lastFrame = performance.now();
+        this.maxNeighbors = 6; // 노드당 최대 연결
         this._onResize = this.resize.bind(this);
         this._onMouseMove = (e) => { this.mouse.active = true; this.mouse.x = e.clientX; this.mouse.y = e.clientY; };
         this._onMouseLeave = () => { this.mouse.active = false; };
@@ -119,7 +123,8 @@ class NeuronBackground {
     }
 
     resize() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        // 고해상도 기기에서 과도한 픽셀 수를 제한해 성능 개선
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
         const w = this.canvas.clientWidth || window.innerWidth;
         const h = this.canvas.clientHeight || window.innerHeight;
         this.canvas.width = Math.floor(w * dpr);
@@ -284,28 +289,49 @@ class NeuronBackground {
             this.proj[i] = { x: sx, y: sy, z: r2z, s: sc };
         }
 
-        // 연결선: 가까운 이웃 우선으로 더 조밀한 라인 생성
+        // 공간 해시(셀)로 근접 이웃만 연결해 O(n*k)로 축소
+        const cell = Math.max(40, Math.floor(this.maxLinkDist * 0.75));
+        const grid = new Map();
+        const key = (ix, iy) => ix + ',' + iy;
+        for (let i = 0; i < this.proj.length; i++) {
+            const p = this.proj[i];
+            const ix = Math.floor(p.x / cell), iy = Math.floor(p.y / cell);
+            const k = key(ix, iy);
+            (grid.get(k) || grid.set(k, []).get(k)).push(i);
+        }
+
+        const connected = new Uint8Array(this.proj.length);
         ctx.lineWidth = 1;
-        for (let i = 0; i < this.particles.length; i++) {
-            const ai = this.proj[i];
-            // 깊이가 너무 멀면 건너뛰기(노이즈 감소)
-            if (!ai) continue;
-            for (let j = i + 1; j < this.particles.length; j++) {
-                const bj = this.proj[j];
-                if (!bj) continue;
-                const dx = ai.x - bj.x;
-                const dy = ai.y - bj.y;
-                const sd = Math.hypot(dx, dy);
-                if (sd < this.maxLinkDist) {
-                    const depthBlend = Math.max(0.35, (ai.s + bj.s) * 0.5);
-                    const alpha = (1 - sd / this.maxLinkDist) * 0.75 * depthBlend;
-                    ctx.strokeStyle = `rgba(0, 230, 255, ${alpha})`;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = 'rgba(0, 220, 255, 0.8)';
-                    ctx.beginPath();
-                    ctx.moveTo(ai.x, ai.y);
-                    ctx.lineTo(bj.x, bj.y);
-                    ctx.stroke();
+        ctx.shadowBlur = 6; // blur 낮춰 비용 절약
+        ctx.shadowColor = 'rgba(0, 220, 255, 0.6)';
+        for (let i = 0; i < this.proj.length; i++) {
+            const a = this.proj[i];
+            const aix = Math.floor(a.x / cell), aiy = Math.floor(a.y / cell);
+            let ncount = 0;
+            for (let gx = -1; gx <= 1; gx++) {
+                for (let gy = -1; gy <= 1; gy++) {
+                    const list = grid.get(key(aix + gx, aiy + gy));
+                    if (!list) continue;
+                    for (let idx = 0; idx < list.length; idx++) {
+                        const j = list[idx];
+                        if (j <= i) continue; // 중복 방지
+                        if (connected[i] >= this.maxNeighbors) break;
+                        const b = this.proj[j];
+                        const dx = a.x - b.x, dy = a.y - b.y;
+                        const d = Math.hypot(dx, dy);
+                        if (d < this.maxLinkDist) {
+                            const depthBlend = Math.max(0.35, (a.s + b.s) * 0.5);
+                            const alpha = (1 - d / this.maxLinkDist) * 0.7 * depthBlend;
+                            ctx.strokeStyle = `rgba(0,230,255,${alpha})`;
+                            ctx.beginPath();
+                            ctx.moveTo(a.x, a.y);
+                            ctx.lineTo(b.x, b.y);
+                            ctx.stroke();
+                            connected[i]++;
+                            ncount++;
+                            if (ncount >= this.maxNeighbors) break;
+                        }
+                    }
                 }
             }
         }
@@ -316,11 +342,33 @@ class NeuronBackground {
             const p = this.particles[i];
             const r = Math.max(0.6, p.size * p2.s * 1.2);
             ctx.fillStyle = this.color;
-            ctx.shadowBlur = 16 * p2.s;
-            ctx.shadowColor = 'rgba(0, 255, 255, 0.95)';
+            ctx.shadowBlur = Math.max(6, 12 * p2.s);
+            ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
             ctx.beginPath();
             ctx.arc(p2.x, p2.y, r, 0, Math.PI * 2);
             ctx.fill();
+        }
+
+        // FPS 측정 및 적응형 품질 조정
+        const now = performance.now();
+        const dt = now - this._lastFrame;
+        this._lastFrame = now;
+        const fps = 1000 / Math.max(1, dt);
+        this.fpsEMA = this.fpsEMA * 0.9 + fps * 0.1;
+        if (now % 500 < dt) { // 약 0.5초마다 한번
+            if (this.fpsEMA < 50) {
+                // 떨어지면 밀도/연결 거리 감소
+                this.targetCount = Math.max(80, Math.floor(this.targetCount * 0.9));
+                this.maxLinkDist = Math.max(120, Math.floor(this.maxLinkDist * 0.94));
+                this.maxNeighbors = Math.max(3, this.maxNeighbors - 1);
+                this.syncParticleCount();
+            } else if (this.fpsEMA > 58 && this.targetCount < 320) {
+                // 충분히 높으면 서서히 증가
+                this.targetCount = Math.min(320, Math.floor(this.targetCount * 1.05));
+                this.maxLinkDist = Math.min(210, Math.floor(this.maxLinkDist * 1.02));
+                this.maxNeighbors = Math.min(8, this.maxNeighbors + 1);
+                this.syncParticleCount();
+            }
         }
     }
 
