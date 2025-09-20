@@ -4,7 +4,7 @@
 // - Draws screen-space filaments between window centers on a 2D overlay
 
 import WindowManager from './WindowManager.js';
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.124/build/three.module.js';
+// THREE is provided globally by three.min.js included in mw3d.html
 
 // DOM
 const overlay = document.getElementById('glow'); // 2D overlay
@@ -12,8 +12,9 @@ const octx = overlay.getContext('2d');
 const DPR = Math.min(window.devicePixelRatio || 1, 1.25);
 let W = 0, H = 0;
 function resizeOverlay() {
-  W = overlay.clientWidth = window.innerWidth;
-  H = overlay.clientHeight = window.innerHeight;
+  // clientWidth/clientHeight are read-only; compute from window and set canvas buffer size only
+  W = window.innerWidth;
+  H = window.innerHeight;
   overlay.width = Math.floor(W * DPR);
   overlay.height = Math.floor(H * DPR);
   octx.setTransform(DPR, 0, 0, DPR, 0, 0);

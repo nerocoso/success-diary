@@ -13,6 +13,32 @@
 <body>
   <canvas id="glow"></canvas>
   <div class="hint">창을 여러 개 열어 서로 다른 홀로그램을 움직여보세요. 마우스로 끌듯이 회전합니다.</div>
-  <script type="module" src="mw3d-three.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.124/build/three.min.js"></script>
+  <script>
+    // If CDN is blocked, THREE may be undefined. We'll detect and fall back to the canvas version automatically.
+    (function(){
+      function loadScript(src, type){
+        return new Promise(function(resolve, reject){
+          var s = document.createElement('script');
+          if (type) s.type = type;
+          s.onload = resolve; s.onerror = reject; s.src = src; document.body.appendChild(s);
+        });
+      }
+      function start(){ loadScript('mw3d-three.js', 'module'); }
+      // wait a tick so the CDN script can attach window.THREE
+      setTimeout(function(){
+        if (window.THREE) { start(); }
+        else {
+          // fallback: use the no-network canvas implementation
+          loadScript('mw3d.js').then(function(){
+            var hint = document.createElement('div');
+            hint.style.cssText='position:fixed;right:10px;bottom:10px;color:#9ab;font:11px system-ui;opacity:.7;';
+            hint.textContent='CDN 차단 감지: 로컬 캔버스 버전으로 전환됨';
+            document.body.appendChild(hint);
+          });
+        }
+      }, 200);
+    })();
+  </script>
 </body>
 </html>
