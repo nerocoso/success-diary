@@ -40,9 +40,11 @@ const hueSelf = (Math.random()*360)|0;
 const color = new t.Color(`hsl(${hueSelf},100%,60%)`);
 let points; let uniforms; let R;
 function buildHologram(){
-  R = Math.min(window.innerWidth, window.innerHeight) * 0.36;
+  // Smaller radius for tighter, more readable sphere
+  R = Math.min(window.innerWidth, window.innerHeight) * 0.24;
   const area = window.innerWidth * window.innerHeight;
-  const N = Math.min(16000, Math.max(6000, Math.floor(area * 0.02))); // adaptive
+  // Increase particle count slightly for perceived density at smaller size
+  const N = Math.min(22000, Math.max(8000, Math.floor(area * 0.03))); // adaptive
   const PHI = Math.PI * (3 - Math.sqrt(5));
   const pos = new Float32Array(N*3);
   for (let i=0;i<N;i++){
@@ -55,7 +57,7 @@ function buildHologram(){
   geom.setAttribute('position', new t.BufferAttribute(pos, 3));
   uniforms = {
     uColor: { value: new t.Vector3(color.r, color.g, color.b) },
-    uSize: { value: 5.5 * DPR },
+    uSize: { value: 4.0 * DPR },
     uTime: { value: 0.0 },
     uImpulse: { value: new t.Vector2(0,0) }
   };
