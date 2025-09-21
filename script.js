@@ -730,6 +730,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (hub) hub.style.display = 'block';
         });
     }
+    const launchMW3DFromFail = document.getElementById('launchMW3DFromFail');
+    if (launchMW3DFromFail) {
+        launchMW3DFromFail.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.open('mw3d.html', '_blank');
+        });
+    }
     // 네로봇 카드 제거됨 (존재할 경우 무시)
     // 네로봇 전용 페이지 버튼/뒤로가기 이벤트 연결
     setupNeroBotPage();

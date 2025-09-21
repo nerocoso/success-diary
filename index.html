@@ -37,10 +37,6 @@
                 <div class="hub-card-icon">📔</div>
                 <div class="hub-card-title">코딩일지</div>
             </div>
-            <div class="hub-card" id="goMW3DCard" title="멀티 윈도우 3D 홀로그램">
-                <div class="hub-card-icon">🌐</div>
-                <div class="hub-card-title">멀티 윈도우 3D</div>
-            </div>
             <div class="hub-card" id="goFailCard" title="실패작 모음">
                 <div class="hub-card-icon">🧪</div>
                 <div class="hub-card-title">실패작</div>
@@ -61,45 +57,21 @@
         <main class="content museum-room" aria-readonly="true">
             <div class="spotlight"></div>
             <div class="exhibit-grid">
-                <!-- Exhibit 1 -->
-                <div class="exhibit">
-                    <div class="glass-case">
-                        <div class="artwork">
-                            <div class="artwork-holo holo-green"></div>
-                        </div>
-                    </div>
-                    <div class="plaque">
-                        <div class="plaque-title">Canvas MW3D v1</div>
-                        <div class="plaque-desc">CPU 투영 + 필라멘트. 시각은 좋았지만, 밀도/연결 검사 비용으로 프레임 드랍.</div>
-                        <div class="plaque-meta">시기: 2025-09 • 원인: O(n·k) 이웃 탐색 병목</div>
-                    </div>
-                </div>
-                <!-- Exhibit 2 -->
-                <div class="exhibit">
-                    <div class="glass-case">
-                        <div class="artwork">
-                            <div class="artwork-holo holo-red"></div>
-                        </div>
-                    </div>
-                    <div class="plaque">
-                        <div class="plaque-title">BroadcastChannel Sync v2</div>
-                        <div class="plaque-desc">탭 간 통신은 잘 됐으나, 좌표 매핑 불안정으로 합쳐짐 연출 오차.</div>
-                        <div class="plaque-meta">시기: 2025-09 • 원인: 화면 오프셋/툴바 높이 환경차</div>
-                    </div>
-                </div>
-                <!-- Exhibit 3 -->
-                <div class="exhibit">
+                <div class="exhibit" style="grid-column: 1 / -1;">
                     <div class="glass-case">
                         <div class="artwork">
                             <div class="artwork-holo holo-cyan"></div>
                         </div>
                     </div>
                     <div class="plaque">
-                        <div class="plaque-title">Three.js Hologram v3</div>
-                        <div class="plaque-desc">GPU 포인트로 전환했으나, 시각적 레퍼런스와 질감 차이로 보류.</div>
-                        <div class="plaque-meta">시기: 2025-09 • 원인: 쉐이더 질감 조합 미완성</div>
+                        <div class="plaque-title">Multi‑Window 3D Project</div>
+                        <div class="plaque-desc">여러 창이 하나의 3D 장면처럼 상호작용하는 실험. 캔버스→Three.js로 진화하며 성능 병목과 질감 차이를 극복 중.</div>
+                        <div class="plaque-meta">전시 노트: 2025-09 • 기술: localStorage/BroadcastChannel, Canvas/Three.js, Shader Points</div>
                     </div>
                 </div>
+            </div>
+            <div style="display:flex; justify-content:center; margin-top:24px;">
+                <button id="launchMW3DFromFail" class="btn btn-primary">멀티 윈도우 3D 실행</button>
             </div>
         </main>
     </div>
