@@ -701,6 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const goDiaryCard = document.getElementById('goDiaryCard');
     const goNeroBotCard = document.getElementById('goNeroBotCard');
     const goMW3DCard = document.getElementById('goMW3DCard');
+    const goFailCard = document.getElementById('goFailCard');
     if (goDiaryCard) {
         goDiaryCard.addEventListener('click', function() {
             transitionTo('main');
@@ -710,6 +711,23 @@ document.addEventListener('DOMContentLoaded', function() {
         goMW3DCard.addEventListener('click', function() {
             // 새 창으로 MW3D 데모 열기
             window.open('mw3d.html', '_blank');
+        });
+    }
+    if (goFailCard) {
+        goFailCard.addEventListener('click', function() {
+            showFailApp();
+        });
+    }
+    const backToHubFromFail = document.getElementById('backToHubFromFail');
+    if (backToHubFromFail) {
+        backToHubFromFail.addEventListener('click', function() {
+            // 허브로 복귀
+            const hub = document.getElementById('hubScreen');
+            const fail = document.getElementById('failApp');
+            const main = document.getElementById('mainApp');
+            if (fail) fail.style.display = 'none';
+            if (main) main.style.display = 'none';
+            if (hub) hub.style.display = 'block';
         });
     }
     // 네로봇 카드 제거됨 (존재할 경우 무시)
@@ -760,6 +778,16 @@ function showMainApp() {
     if (mainApp) mainApp.style.display = 'none';
     // 로그인 종료 후 애니메이션 중지
     if (neuronBg) neuronBg.stop();
+}
+
+// 실패작 화면 표시
+function showFailApp() {
+    const hub = document.getElementById('hubScreen');
+    const fail = document.getElementById('failApp');
+    const main = document.getElementById('mainApp');
+    if (hub) hub.style.display = 'none';
+    if (main) main.style.display = 'none';
+    if (fail) fail.style.display = 'block';
 }
 
 function setupLoginEventListeners() {
